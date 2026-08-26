@@ -1,0 +1,27 @@
+{
+  "name": "risk-off-pilot",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "description": "Independent incident assurance for onchain vault operations",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web -c cyan,magenta \"npm run dev -w @risk-off/api\" \"npm run dev -w @risk-off/web\"",
+    "build": "npm run build -w @risk-off/core && npm run build -w @risk-off/api && npm run build -w @risk-off/web",
+    "test": "npm run test -w @risk-off/core && npm run test -w @risk-off/api",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "refresh:incident": "tsx scripts/refresh-usd0pp.ts",
+    "start": "npm run start -w @risk-off/api"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

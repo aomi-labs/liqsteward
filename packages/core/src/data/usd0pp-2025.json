@@ -1,0 +1,493 @@
+{
+  "id": "usd0pp-2025-01-09",
+  "title": "USD0++ depeg response — Gauntlet USDC Balanced",
+  "chainId": 1,
+  "vault": {
+    "address": "0x8eB67A509616cd6A7c1B3c8C21D48FF57df3d458",
+    "nameAtReplay": "Gauntlet USDC Balanced",
+    "currentName": "Gauntlet USDC Core",
+    "asset": {
+      "symbol": "USDC",
+      "decimals": 6
+    }
+  },
+  "window": {
+    "from": "2025-01-09T20:00:00.000Z",
+    "to": "2025-01-10T06:00:00.000Z"
+  },
+  "affectedMarketIds": [
+    "0xb48bb53f0f2690c71e8813f2dc7ed6fca9ac4b0ace3faa37b4a8e5ece38fa1a2",
+    "0x8411eeb07c8e32de0b3784b6b967346a45593bfd8baeb291cc209dc195c7b3ad"
+  ],
+  "officialNarrative": {
+    "text": "Nine transactions between January 9 at 9:46pm and January 10 at 4:02am withdrew all exposure from USD0++ markets without bad debt.",
+    "source": "https://vaultbook.gauntlet.xyz/resources/market-volatility",
+    "status": "official-claim"
+  },
+  "extraction": {
+    "source": "https://api.morpho.org/graphql",
+    "query": "query IncidentReallocations { vaultReallocates( first: 1000 orderBy: Timestamp orderDirection: Asc where: { vaultAddress_in: [\"0x8eB67A509616cd6A7c1B3c8C21D48FF57df3d458\"] chainId_in: [1] timestamp_gte: 1736452800 timestamp_lte: 1736488800 } ) { items { id timestamp hash blockNumber caller assets type market { marketId lltv collateralAsset { address symbol } loanAsset { address symbol } } } } }",
+    "extractedAt": "2026-08-26T05:44:04.608Z"
+  },
+  "events": [
+    {
+      "id": "1-0x21f4353fda9ca215011336762e764b72ee5dd2c9821d15cce5499a9b5ea2d516-250",
+      "hash": "0x21f4353fda9ca215011336762e764b72ee5dd2c9821d15cce5499a9b5ea2d516",
+      "blockNumber": 21590858,
+      "timestamp": 1736473199,
+      "caller": "0xfd32fA2ca22c76dD6E550706Ad913FC6CE91c75D",
+      "type": "MarketWithdraw",
+      "assets": "6000000000000",
+      "market": {
+        "id": "0x27852bb453d4fe6ec918dd27b7136bb233d210aab1758a59ed8daaeec24f7b3d",
+        "label": "PT-sUSDE-27FEB2025 / USDC",
+        "collateralSymbol": "PT-sUSDE-27FEB2025",
+        "collateralAddress": "0x386AE941D4262B0Ee96354499dF2ab8442734EC0",
+        "loanSymbol": "USDC",
+        "lltv": "915000000000000000"
+      }
+    },
+    {
+      "id": "1-0x21f4353fda9ca215011336762e764b72ee5dd2c9821d15cce5499a9b5ea2d516-253",
+      "hash": "0x21f4353fda9ca215011336762e764b72ee5dd2c9821d15cce5499a9b5ea2d516",
+      "blockNumber": 21590858,
+      "timestamp": 1736473199,
+      "caller": "0xfd32fA2ca22c76dD6E550706Ad913FC6CE91c75D",
+      "type": "MarketWithdraw",
+      "assets": "397418700947",
+      "market": {
+        "id": "0x718af3af39b183758849486340b69466e3e89b84b7884188323416621ee91cb7",
+        "label": "UNI / USDC",
+        "collateralSymbol": "UNI",
+        "collateralAddress": "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
+        "loanSymbol": "USDC",
+        "lltv": "625000000000000000"
+      }
+    },
+    {
+      "id": "1-0x21f4353fda9ca215011336762e764b72ee5dd2c9821d15cce5499a9b5ea2d516-256",
+      "hash": "0x21f4353fda9ca215011336762e764b72ee5dd2c9821d15cce5499a9b5ea2d516",
+      "blockNumber": 21590858,
+      "timestamp": 1736473199,
+      "caller": "0xfd32fA2ca22c76dD6E550706Ad913FC6CE91c75D",
+      "type": "MarketWithdraw",
+      "assets": "90063548",
+      "market": {
+        "id": "0x7e9c708876fa3816c46aeb08937b51aa0461c2af3865ecb306433db8a80b1d1b",
+        "label": "pufETH / USDC",
+        "collateralSymbol": "pufETH",
+        "collateralAddress": "0xD9A442856C234a39a81a089C06451EBAa4306a72",
+        "loanSymbol": "USDC",
+        "lltv": "770000000000000000"
+      }
+    },
+    {
+      "id": "1-0x21f4353fda9ca215011336762e764b72ee5dd2c9821d15cce5499a9b5ea2d516-259",
+      "hash": "0x21f4353fda9ca215011336762e764b72ee5dd2c9821d15cce5499a9b5ea2d516",
+      "blockNumber": 21590858,
+      "timestamp": 1736473199,
+      "caller": "0xfd32fA2ca22c76dD6E550706Ad913FC6CE91c75D",
+      "type": "MarketWithdraw",
+      "assets": "41037326420",
+      "market": {
+        "id": "0xd925961ad5df1d12f677ff14cf20bac37ea5ef3b325d64d5a9f4c0cc013a1d47",
+        "label": "stUSD / USDC",
+        "collateralSymbol": "stUSD",
+        "collateralAddress": "0x0022228a2cc5E7eF0274A7Baa600d44da5aB5776",
+        "loanSymbol": "USDC",
+        "lltv": "965000000000000000"
+      }
+    },
+    {
+      "id": "1-0x21f4353fda9ca215011336762e764b72ee5dd2c9821d15cce5499a9b5ea2d516-264",
+      "hash": "0x21f4353fda9ca215011336762e764b72ee5dd2c9821d15cce5499a9b5ea2d516",
+      "blockNumber": 21590858,
+      "timestamp": 1736473199,
+      "caller": "0xfd32fA2ca22c76dD6E550706Ad913FC6CE91c75D",
+      "type": "MarketSupply",
+      "assets": "6438546090915",
+      "market": {
+        "id": "0xb48bb53f0f2690c71e8813f2dc7ed6fca9ac4b0ace3faa37b4a8e5ece38fa1a2",
+        "label": "USD0++ / USDC",
+        "collateralSymbol": "USD0++",
+        "collateralAddress": "0x35D8949372D46B7a3D5A56006AE77B215fc69bC0",
+        "loanSymbol": "USDC",
+        "lltv": "860000000000000000"
+      }
+    },
+    {
+      "id": "1-0xf80257c30362529085654d2efe9ea248cae05f5031016ab0143f6929baf1e373-279",
+      "hash": "0xf80257c30362529085654d2efe9ea248cae05f5031016ab0143f6929baf1e373",
+      "blockNumber": 21590875,
+      "timestamp": 1736473403,
+      "caller": "0xfd32fA2ca22c76dD6E550706Ad913FC6CE91c75D",
+      "type": "MarketWithdraw",
+      "assets": "2790901",
+      "market": {
+        "id": "0xd925961ad5df1d12f677ff14cf20bac37ea5ef3b325d64d5a9f4c0cc013a1d47",
+        "label": "stUSD / USDC",
+        "collateralSymbol": "stUSD",
+        "collateralAddress": "0x0022228a2cc5E7eF0274A7Baa600d44da5aB5776",
+        "loanSymbol": "USDC",
+        "lltv": "965000000000000000"
+      }
+    },
+    {
+      "id": "1-0xf80257c30362529085654d2efe9ea248cae05f5031016ab0143f6929baf1e373-284",
+      "hash": "0xf80257c30362529085654d2efe9ea248cae05f5031016ab0143f6929baf1e373",
+      "blockNumber": 21590875,
+      "timestamp": 1736473403,
+      "caller": "0xfd32fA2ca22c76dD6E550706Ad913FC6CE91c75D",
+      "type": "MarketSupply",
+      "assets": "2790901",
+      "market": {
+        "id": "0xb48bb53f0f2690c71e8813f2dc7ed6fca9ac4b0ace3faa37b4a8e5ece38fa1a2",
+        "label": "USD0++ / USDC",
+        "collateralSymbol": "USD0++",
+        "collateralAddress": "0x35D8949372D46B7a3D5A56006AE77B215fc69bC0",
+        "loanSymbol": "USDC",
+        "lltv": "860000000000000000"
+      }
+    },
+    {
+      "id": "1-0x895b26dd32f8c787ee51276aa802e0ff9c0e080e5e9aa3f6fbdc767c13446d2d-78",
+      "hash": "0x895b26dd32f8c787ee51276aa802e0ff9c0e080e5e9aa3f6fbdc767c13446d2d",
+      "blockNumber": 21590964,
+      "timestamp": 1736474483,
+      "caller": "0xfd32fA2ca22c76dD6E550706Ad913FC6CE91c75D",
+      "type": "MarketWithdraw",
+      "assets": "439640846707",
+      "market": {
+        "id": "0xb48bb53f0f2690c71e8813f2dc7ed6fca9ac4b0ace3faa37b4a8e5ece38fa1a2",
+        "label": "USD0++ / USDC",
+        "collateralSymbol": "USD0++",
+        "collateralAddress": "0x35D8949372D46B7a3D5A56006AE77B215fc69bC0",
+        "loanSymbol": "USDC",
+        "lltv": "860000000000000000"
+      }
+    },
+    {
+      "id": "1-0x895b26dd32f8c787ee51276aa802e0ff9c0e080e5e9aa3f6fbdc767c13446d2d-83",
+      "hash": "0x895b26dd32f8c787ee51276aa802e0ff9c0e080e5e9aa3f6fbdc767c13446d2d",
+      "blockNumber": 21590964,
+      "timestamp": 1736474483,
+      "caller": "0xfd32fA2ca22c76dD6E550706Ad913FC6CE91c75D",
+      "type": "MarketSupply",
+      "assets": "439640846707",
+      "market": {
+        "id": "0x27852bb453d4fe6ec918dd27b7136bb233d210aab1758a59ed8daaeec24f7b3d",
+        "label": "PT-sUSDE-27FEB2025 / USDC",
+        "collateralSymbol": "PT-sUSDE-27FEB2025",
+        "collateralAddress": "0x386AE941D4262B0Ee96354499dF2ab8442734EC0",
+        "loanSymbol": "USDC",
+        "lltv": "915000000000000000"
+      }
+    },
+    {
+      "id": "1-0xb9f79fbbe35eaacae4bf0bd632861900db94302288d8e1aa7fb015029a7714e7-366",
+      "hash": "0xb9f79fbbe35eaacae4bf0bd632861900db94302288d8e1aa7fb015029a7714e7",
+      "blockNumber": 21590981,
+      "timestamp": 1736474687,
+      "caller": "0xfd32fA2ca22c76dD6E550706Ad913FC6CE91c75D",
+      "type": "MarketWithdraw",
+      "assets": "5560359153293",
+      "market": {
+        "id": "0xb48bb53f0f2690c71e8813f2dc7ed6fca9ac4b0ace3faa37b4a8e5ece38fa1a2",
+        "label": "USD0++ / USDC",
+        "collateralSymbol": "USD0++",
+        "collateralAddress": "0x35D8949372D46B7a3D5A56006AE77B215fc69bC0",
+        "loanSymbol": "USDC",
+        "lltv": "860000000000000000"
+      }
+    },
+    {
+      "id": "1-0xb9f79fbbe35eaacae4bf0bd632861900db94302288d8e1aa7fb015029a7714e7-371",
+      "hash": "0xb9f79fbbe35eaacae4bf0bd632861900db94302288d8e1aa7fb015029a7714e7",
+      "blockNumber": 21590981,
+      "timestamp": 1736474687,
+      "caller": "0xfd32fA2ca22c76dD6E550706Ad913FC6CE91c75D",
+      "type": "MarketSupply",
+      "assets": "5560359153293",
+      "market": {
+        "id": "0x27852bb453d4fe6ec918dd27b7136bb233d210aab1758a59ed8daaeec24f7b3d",
+        "label": "PT-sUSDE-27FEB2025 / USDC",
+        "collateralSymbol": "PT-sUSDE-27FEB2025",
+        "collateralAddress": "0x386AE941D4262B0Ee96354499dF2ab8442734EC0",
+        "loanSymbol": "USDC",
+        "lltv": "915000000000000000"
+      }
+    },
+    {
+      "id": "1-0xe9b338d19c1f412ff5a0db052dcb3d3ef2f91e613ab87e6fe7131d00263099ab-398",
+      "hash": "0xe9b338d19c1f412ff5a0db052dcb3d3ef2f91e613ab87e6fe7131d00263099ab",
+      "blockNumber": 21591187,
+      "timestamp": 1736477183,
+      "caller": "0xCc148f980062ba934E1B2f29eB3cbA7D8e9F6acb",
+      "type": "MarketWithdraw",
+      "assets": "8429607066173",
+      "market": {
+        "id": "0xb48bb53f0f2690c71e8813f2dc7ed6fca9ac4b0ace3faa37b4a8e5ece38fa1a2",
+        "label": "USD0++ / USDC",
+        "collateralSymbol": "USD0++",
+        "collateralAddress": "0x35D8949372D46B7a3D5A56006AE77B215fc69bC0",
+        "loanSymbol": "USDC",
+        "lltv": "860000000000000000"
+      }
+    },
+    {
+      "id": "1-0xe9b338d19c1f412ff5a0db052dcb3d3ef2f91e613ab87e6fe7131d00263099ab-403",
+      "hash": "0xe9b338d19c1f412ff5a0db052dcb3d3ef2f91e613ab87e6fe7131d00263099ab",
+      "blockNumber": 21591187,
+      "timestamp": 1736477183,
+      "caller": "0xCc148f980062ba934E1B2f29eB3cbA7D8e9F6acb",
+      "type": "MarketSupply",
+      "assets": "4135740909898",
+      "market": {
+        "id": "0x346afa2b6d528222a2f9721ded6e7e2c40ac94877a598f5dae5013c651d2a462",
+        "label": "PT-sUSDE-27MAR2025 / USDC",
+        "collateralSymbol": "PT-sUSDE-27MAR2025",
+        "collateralAddress": "0xE00bd3Df25fb187d6ABBB620b3dfd19839947b81",
+        "loanSymbol": "USDC",
+        "lltv": "915000000000000000"
+      }
+    },
+    {
+      "id": "1-0xe9b338d19c1f412ff5a0db052dcb3d3ef2f91e613ab87e6fe7131d00263099ab-408",
+      "hash": "0xe9b338d19c1f412ff5a0db052dcb3d3ef2f91e613ab87e6fe7131d00263099ab",
+      "blockNumber": 21591187,
+      "timestamp": 1736477183,
+      "caller": "0xCc148f980062ba934E1B2f29eB3cbA7D8e9F6acb",
+      "type": "MarketSupply",
+      "assets": "3020358687811",
+      "market": {
+        "id": "0x27852bb453d4fe6ec918dd27b7136bb233d210aab1758a59ed8daaeec24f7b3d",
+        "label": "PT-sUSDE-27FEB2025 / USDC",
+        "collateralSymbol": "PT-sUSDE-27FEB2025",
+        "collateralAddress": "0x386AE941D4262B0Ee96354499dF2ab8442734EC0",
+        "loanSymbol": "USDC",
+        "lltv": "915000000000000000"
+      }
+    },
+    {
+      "id": "1-0xe9b338d19c1f412ff5a0db052dcb3d3ef2f91e613ab87e6fe7131d00263099ab-413",
+      "hash": "0xe9b338d19c1f412ff5a0db052dcb3d3ef2f91e613ab87e6fe7131d00263099ab",
+      "blockNumber": 21591187,
+      "timestamp": 1736477183,
+      "caller": "0xCc148f980062ba934E1B2f29eB3cbA7D8e9F6acb",
+      "type": "MarketSupply",
+      "assets": "1273507468464",
+      "market": {
+        "id": "0x3a85e619751152991742810df6ec69ce473daef99e28a64ab2340d7b7ccfee49",
+        "label": "WBTC / USDC",
+        "collateralSymbol": "WBTC",
+        "collateralAddress": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+        "loanSymbol": "USDC",
+        "lltv": "860000000000000000"
+      }
+    },
+    {
+      "id": "1-0x167928fd0b4e06ffd161118ef51d2c99e6813031fae663369a40cfba898e713d-454",
+      "hash": "0x167928fd0b4e06ffd161118ef51d2c99e6813031fae663369a40cfba898e713d",
+      "blockNumber": 21591371,
+      "timestamp": 1736479427,
+      "caller": "0xCc148f980062ba934E1B2f29eB3cbA7D8e9F6acb",
+      "type": "MarketWithdraw",
+      "assets": "15000187061672",
+      "market": {
+        "id": "0xb48bb53f0f2690c71e8813f2dc7ed6fca9ac4b0ace3faa37b4a8e5ece38fa1a2",
+        "label": "USD0++ / USDC",
+        "collateralSymbol": "USD0++",
+        "collateralAddress": "0x35D8949372D46B7a3D5A56006AE77B215fc69bC0",
+        "loanSymbol": "USDC",
+        "lltv": "860000000000000000"
+      }
+    },
+    {
+      "id": "1-0x167928fd0b4e06ffd161118ef51d2c99e6813031fae663369a40cfba898e713d-459",
+      "hash": "0x167928fd0b4e06ffd161118ef51d2c99e6813031fae663369a40cfba898e713d",
+      "blockNumber": 21591371,
+      "timestamp": 1736479427,
+      "caller": "0xCc148f980062ba934E1B2f29eB3cbA7D8e9F6acb",
+      "type": "MarketSupply",
+      "assets": "2048556935840",
+      "market": {
+        "id": "0x27852bb453d4fe6ec918dd27b7136bb233d210aab1758a59ed8daaeec24f7b3d",
+        "label": "PT-sUSDE-27FEB2025 / USDC",
+        "collateralSymbol": "PT-sUSDE-27FEB2025",
+        "collateralAddress": "0x386AE941D4262B0Ee96354499dF2ab8442734EC0",
+        "loanSymbol": "USDC",
+        "lltv": "915000000000000000"
+      }
+    },
+    {
+      "id": "1-0x167928fd0b4e06ffd161118ef51d2c99e6813031fae663369a40cfba898e713d-464",
+      "hash": "0x167928fd0b4e06ffd161118ef51d2c99e6813031fae663369a40cfba898e713d",
+      "blockNumber": 21591371,
+      "timestamp": 1736479427,
+      "caller": "0xCc148f980062ba934E1B2f29eB3cbA7D8e9F6acb",
+      "type": "MarketSupply",
+      "assets": "2802465874919",
+      "market": {
+        "id": "0x85c7f4374f3a403b36d54cc284983b2b02bbd8581ee0f3c36494447b87d9fcab",
+        "label": "sUSDe / USDC",
+        "collateralSymbol": "sUSDe",
+        "collateralAddress": "0x9D39A5DE30e57443BfF2A8307A4256c8797A3497",
+        "loanSymbol": "USDC",
+        "lltv": "915000000000000000"
+      }
+    },
+    {
+      "id": "1-0x167928fd0b4e06ffd161118ef51d2c99e6813031fae663369a40cfba898e713d-469",
+      "hash": "0x167928fd0b4e06ffd161118ef51d2c99e6813031fae663369a40cfba898e713d",
+      "blockNumber": 21591371,
+      "timestamp": 1736479427,
+      "caller": "0xCc148f980062ba934E1B2f29eB3cbA7D8e9F6acb",
+      "type": "MarketSupply",
+      "assets": "3646622405000",
+      "market": {
+        "id": "0xb323495f7e4148be5643a4ea4a8221eef163e4bccfdedc2a6f4696baacbc86cc",
+        "label": "wstETH / USDC",
+        "collateralSymbol": "wstETH",
+        "collateralAddress": "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0",
+        "loanSymbol": "USDC",
+        "lltv": "860000000000000000"
+      }
+    },
+    {
+      "id": "1-0x167928fd0b4e06ffd161118ef51d2c99e6813031fae663369a40cfba898e713d-474",
+      "hash": "0x167928fd0b4e06ffd161118ef51d2c99e6813031fae663369a40cfba898e713d",
+      "blockNumber": 21591371,
+      "timestamp": 1736479427,
+      "caller": "0xCc148f980062ba934E1B2f29eB3cbA7D8e9F6acb",
+      "type": "MarketSupply",
+      "assets": "2021578824000",
+      "market": {
+        "id": "0x64d65c9a2d91c36d56fbc42d69e979335320169b3df63bf92789e2c8883fcc64",
+        "label": "cbBTC / USDC",
+        "collateralSymbol": "cbBTC",
+        "collateralAddress": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
+        "loanSymbol": "USDC",
+        "lltv": "860000000000000000"
+      }
+    },
+    {
+      "id": "1-0x167928fd0b4e06ffd161118ef51d2c99e6813031fae663369a40cfba898e713d-479",
+      "hash": "0x167928fd0b4e06ffd161118ef51d2c99e6813031fae663369a40cfba898e713d",
+      "blockNumber": 21591371,
+      "timestamp": 1736479427,
+      "caller": "0xCc148f980062ba934E1B2f29eB3cbA7D8e9F6acb",
+      "type": "MarketSupply",
+      "assets": "4480963021913",
+      "market": {
+        "id": "0x3a85e619751152991742810df6ec69ce473daef99e28a64ab2340d7b7ccfee49",
+        "label": "WBTC / USDC",
+        "collateralSymbol": "WBTC",
+        "collateralAddress": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+        "loanSymbol": "USDC",
+        "lltv": "860000000000000000"
+      }
+    },
+    {
+      "id": "1-0x306b1458998b290fcf629d1b452e21b1be8589adb697b2fde111130a9765a85d-382",
+      "hash": "0x306b1458998b290fcf629d1b452e21b1be8589adb697b2fde111130a9765a85d",
+      "blockNumber": 21591561,
+      "timestamp": 1736481731,
+      "caller": "0xCc148f980062ba934E1B2f29eB3cbA7D8e9F6acb",
+      "type": "MarketWithdraw",
+      "assets": "1300132138250",
+      "market": {
+        "id": "0x8411eeb07c8e32de0b3784b6b967346a45593bfd8baeb291cc209dc195c7b3ad",
+        "label": "PT-USD0++-27MAR2025 / USDC",
+        "collateralSymbol": "PT-USD0++-27MAR2025",
+        "collateralAddress": "0x5BaE9a5D67d1CA5b09B14c91935f635CFBF3b685",
+        "loanSymbol": "USDC",
+        "lltv": "915000000000000000"
+      }
+    },
+    {
+      "id": "1-0x306b1458998b290fcf629d1b452e21b1be8589adb697b2fde111130a9765a85d-387",
+      "hash": "0x306b1458998b290fcf629d1b452e21b1be8589adb697b2fde111130a9765a85d",
+      "blockNumber": 21591561,
+      "timestamp": 1736481731,
+      "caller": "0xCc148f980062ba934E1B2f29eB3cbA7D8e9F6acb",
+      "type": "MarketSupply",
+      "assets": "1300132138250",
+      "market": {
+        "id": "0x64d65c9a2d91c36d56fbc42d69e979335320169b3df63bf92789e2c8883fcc64",
+        "label": "cbBTC / USDC",
+        "collateralSymbol": "cbBTC",
+        "collateralAddress": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
+        "loanSymbol": "USDC",
+        "lltv": "860000000000000000"
+      }
+    },
+    {
+      "id": "1-0x184c3709b0d67e567d702e2a6049bbd4f939859ee9743e863e5a3be0e25ae6b4-604",
+      "hash": "0x184c3709b0d67e567d702e2a6049bbd4f939859ee9743e863e5a3be0e25ae6b4",
+      "blockNumber": 21591817,
+      "timestamp": 1736484803,
+      "caller": "0xCc148f980062ba934E1B2f29eB3cbA7D8e9F6acb",
+      "type": "MarketWithdraw",
+      "assets": "400066007619",
+      "market": {
+        "id": "0x8411eeb07c8e32de0b3784b6b967346a45593bfd8baeb291cc209dc195c7b3ad",
+        "label": "PT-USD0++-27MAR2025 / USDC",
+        "collateralSymbol": "PT-USD0++-27MAR2025",
+        "collateralAddress": "0x5BaE9a5D67d1CA5b09B14c91935f635CFBF3b685",
+        "loanSymbol": "USDC",
+        "lltv": "915000000000000000"
+      }
+    },
+    {
+      "id": "1-0x184c3709b0d67e567d702e2a6049bbd4f939859ee9743e863e5a3be0e25ae6b4-609",
+      "hash": "0x184c3709b0d67e567d702e2a6049bbd4f939859ee9743e863e5a3be0e25ae6b4",
+      "blockNumber": 21591817,
+      "timestamp": 1736484803,
+      "caller": "0xCc148f980062ba934E1B2f29eB3cbA7D8e9F6acb",
+      "type": "MarketSupply",
+      "assets": "400066007619",
+      "market": {
+        "id": "0x64d65c9a2d91c36d56fbc42d69e979335320169b3df63bf92789e2c8883fcc64",
+        "label": "cbBTC / USDC",
+        "collateralSymbol": "cbBTC",
+        "collateralAddress": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
+        "loanSymbol": "USDC",
+        "lltv": "860000000000000000"
+      }
+    },
+    {
+      "id": "1-0xd039e0a88e77fa798e5838273892da7c2c7b0f06883eeb43a847736097cb7146-258",
+      "hash": "0xd039e0a88e77fa798e5838273892da7c2c7b0f06883eeb43a847736097cb7146",
+      "blockNumber": 21591872,
+      "timestamp": 1736485463,
+      "caller": "0xCc148f980062ba934E1B2f29eB3cbA7D8e9F6acb",
+      "type": "MarketWithdraw",
+      "assets": "350173290279",
+      "market": {
+        "id": "0x8411eeb07c8e32de0b3784b6b967346a45593bfd8baeb291cc209dc195c7b3ad",
+        "label": "PT-USD0++-27MAR2025 / USDC",
+        "collateralSymbol": "PT-USD0++-27MAR2025",
+        "collateralAddress": "0x5BaE9a5D67d1CA5b09B14c91935f635CFBF3b685",
+        "loanSymbol": "USDC",
+        "lltv": "915000000000000000"
+      }
+    },
+    {
+      "id": "1-0xd039e0a88e77fa798e5838273892da7c2c7b0f06883eeb43a847736097cb7146-263",
+      "hash": "0xd039e0a88e77fa798e5838273892da7c2c7b0f06883eeb43a847736097cb7146",
+      "blockNumber": 21591872,
+      "timestamp": 1736485463,
+      "caller": "0xCc148f980062ba934E1B2f29eB3cbA7D8e9F6acb",
+      "type": "MarketSupply",
+      "assets": "350173290279",
+      "market": {
+        "id": "0x64d65c9a2d91c36d56fbc42d69e979335320169b3df63bf92789e2c8883fcc64",
+        "label": "cbBTC / USDC",
+        "collateralSymbol": "cbBTC",
+        "collateralAddress": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
+        "loanSymbol": "USDC",
+        "lltv": "860000000000000000"
+      }
+    }
+  ]
+}
