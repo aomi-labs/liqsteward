@@ -1,0 +1,4 @@
+[app]
+name = "risk-off-pilot"
+display_name = "Risk-Off Vault Operator"
+public = true

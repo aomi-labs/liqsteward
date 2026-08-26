@@ -146,7 +146,7 @@ export function App() {
         <nav><span className="live"><i /> ETHEREUM LIVE</span><span>Replay <b>USD0++ / 2025-01</b></span></nav>
         <div className="top-actions">
           <a className="button ghost" href="/api/incidents/usd0pp/evidence" download><Download size={14} /> Evidence</a>
-          <button className="button primary" onClick={openContainment}><TerminalSquare size={14} /> View payload</button>
+          <button className="button primary" onClick={openContainment}><TerminalSquare size={14} /> Inspect route</button>
         </div>
       </header>
 
@@ -155,7 +155,7 @@ export function App() {
           <div>
             <div className="eyebrow"><CircleDot size={13} /> INCIDENT REPLAY <span>/</span> CLOSED</div>
             <h1>USD0++ risk response</h1>
-            <p className="subtitle">Independent reconstruction of Gauntlet’s USDC Balanced vault response across Morpho.</p>
+            <p className="subtitle">Manager-authorized risk-off execution with independent evidence before and after the transaction.</p>
             <div className="vault-line"><span>{fixture.vault.nameAtReplay}</span><Copyable value={fixture.vault.address} /><span className="renamed">Now {fixture.vault.currentName}</span></div>
           </div>
           <div className="assurance-score">
@@ -182,6 +182,25 @@ export function App() {
             <div className="claim-box"><EvidenceTag kind="official-claim" /><blockquote>“{summary.discrepancy.claim}”</blockquote><a href={fixture.officialNarrative.source} target="_blank">Gauntlet Vaultbook <ExternalLink size={12} /></a></div>
           </section>
         )}
+
+        <section className="execution-pipeline">
+          <div className="pipeline-copy">
+            <span className="section-kicker">AOMI EVM-CORE ROUTE</span>
+            <h2>The manager decides. Aomi stages, simulates, requests approval, and verifies.</h2>
+            <p>Runs on behalf of the connected authorized allocator. Aomi is not the curator, signer, or custodian.</p>
+          </div>
+          <div className="pipeline-steps">
+            <span><small>01</small><b>Evidence</b><code>replay + inspect</code></span>
+            <i>→</i>
+            <span><small>02</small><b>Stage</b><code>evm_stage_tx</code></span>
+            <i>→</i>
+            <span className="gate"><small>03 · HARD GATE</small><b>Simulate</b><code>simulate_batch</code></span>
+            <i>→</i>
+            <span><small>04 · WALLET</small><b>Approve + commit</b><code>evm_commit_txs</code></span>
+            <i>→</i>
+            <span><small>05</small><b>Residual proof</b><code>verify_execution</code></span>
+          </div>
+        </section>
 
         <div className="content-grid">
           <section className="panel timeline-panel">
@@ -215,7 +234,7 @@ export function App() {
         <footer><span><Activity size={13} /> PUBLIC DATA PROTOTYPE</span><p>Built for outside-in validation. No Gauntlet credentials, signing authority, or endorsement implied.</p><span>Schema risk-off-evidence/v1</span></footer>
       </main>
 
-      {containment && <div className="modal-backdrop" onClick={() => setContainment(null)}><section className="modal" onClick={(event) => event.stopPropagation()}><header><div><span className="section-kicker">UNSIGNED CONTAINMENT ARTIFACT</span><h2>Exact payload, explicit limits.</h2></div><button onClick={() => setContainment(null)}><X /></button></header><div className="modal-warning"><AlertTriangle size={17} /><p><b>Counterfactual reconstruction — not executable.</b><br />This demonstrates transaction encoding and approval shape against historical conditions. It is deliberately blocked from submission.</p></div><pre>{JSON.stringify(containment, null, 2)}</pre><div className="modal-actions"><a href="/api/incidents/usd0pp/containment" className="button ghost" target="_blank"><ExternalLink size={14} /> Open JSON</a><button className="button primary" onClick={() => void navigator.clipboard.writeText(JSON.stringify(containment, null, 2))}><Copy size={14} /> Copy artifact</button></div></section></div>}
+      {containment && <div className="modal-backdrop" onClick={() => setContainment(null)}><section className="modal" onClick={(event) => event.stopPropagation()}><header><div><span className="section-kicker">AOMI EXECUTION ROUTE · HISTORICAL PREVIEW</span><h2>Exact calldata enters the host pipeline.</h2></div><button onClick={() => setContainment(null)}><X /></button></header><div className="route-summary"><code>evm_stage_tx</code><i>→</i><code>simulate_batch</code><i>→</i><code>evm_commit_txs</code><i>→</i><code>verify_execution</code></div><div className="modal-warning"><AlertTriangle size={17} /><p><b>This USD0++ payload is a counterfactual preview, not a live action.</b><br />For a current incident, the authorized manager reviews exact allocations; Aomi stages raw calldata, stops on failed simulation, and the connected allocator wallet must approve commit.</p></div><pre>{JSON.stringify(containment, null, 2)}</pre><div className="modal-actions"><a href="/api/incidents/usd0pp/containment" className="button ghost" target="_blank"><ExternalLink size={14} /> Open preview JSON</a><button className="button primary" onClick={() => void navigator.clipboard.writeText(JSON.stringify(containment, null, 2))}><Copy size={14} /> Copy preview</button></div></section></div>}
     </div>
   );
 }

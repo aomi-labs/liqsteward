@@ -8,7 +8,9 @@ description = "Aomi tool surface for independent vault incident assurance"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-aomi-sdk = { path = "../../aomi-sdk/sdk" }
+aomi-sdk = "=4.0.0"
+alloy-primitives = "=0.8.25"
+alloy-sol-types = "=0.8.25"
 reqwest = { version = "0.13", default-features = false, features = ["blocking", "json", "rustls"] }
 schemars = "1.0.4"
 serde = { version = "1.0", features = ["derive"] }

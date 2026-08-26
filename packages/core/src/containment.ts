@@ -1,12 +1,17 @@
 import { encodeFunctionData, maxUint256, type Address } from "viem";
 import type { UnsignedAction } from "./types.js";
 
-type MarketParams = {
+export type MarketParams = {
   loanToken: Address;
   collateralToken: Address;
   oracle: Address;
   irm: Address;
   lltv: bigint;
+};
+
+export type ContainmentAllocation = {
+  marketParams: MarketParams;
+  assets: bigint;
 };
 
 const USDC = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" as const;
@@ -61,6 +66,21 @@ const reallocateAbi = [{
   outputs: [],
 }] as const;
 
+export function containmentAction(
+  vault: Address,
+  allocations: ContainmentAllocation[],
+  description = "Apply the manager-reviewed MetaMorpho target allocation.",
+): UnsignedAction {
+  return {
+    to: vault,
+    value: "0",
+    operation: 0,
+    data: encodeFunctionData({ abi: reallocateAbi, functionName: "reallocate", args: [allocations] }),
+    description,
+    status: "proposed",
+  };
+}
+
 export function historicalContainmentAction(
   vault: Address = "0x8eB67A509616cd6A7c1B3c8C21D48FF57df3d458",
 ): UnsignedAction {
@@ -69,14 +89,11 @@ export function historicalContainmentAction(
     { marketParams: historicalMarkets.ptUsd0pp, assets: 0n },
     { marketParams: historicalMarkets.cbBtcDestination, assets: maxUint256 },
   ];
-  return {
-    to: vault,
-    value: "0",
-    operation: 0,
-    data: encodeFunctionData({ abi: reallocateAbi, functionName: "reallocate", args: [allocations] }),
-    description: "Set direct and PT USD0++ allocations to zero; route all withdrawn USDC to the observed cbBTC/USDC destination market.",
-    status: "proposed",
-  };
+  return containmentAction(
+    vault,
+    allocations,
+    "Set direct and PT USD0++ allocations to zero; route all withdrawn USDC to the observed cbBTC/USDC destination market.",
+  );
 }
 
 export function historicalContainmentPolicy() {

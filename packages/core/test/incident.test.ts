@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
+  containmentAction,
   historicalContainmentAction,
+  historicalMarkets,
   incidentFixtureSchema,
   safeBatch,
   summarizeIncident,
   transactionTimeline,
   usd0ppFixture,
 } from "../src/index.js";
+import { maxUint256 } from "viem";
 
 describe("USD0++ incident reconstruction", () => {
   it("parses the checked-in public evidence fixture", () => {
@@ -37,7 +40,18 @@ describe("containment artifact", () => {
     expect(action.operation).toBe(0);
     expect(action.value).toBe("0");
     expect(action.data.length).toBeGreaterThan(10);
+    expect(action.data.slice(0, 10)).toBe("0x7299aa31");
     expect(batch.transactions).toEqual([expect.objectContaining({ to: action.to, data: action.data })]);
+  });
+
+  it("uses the same generic encoder for manager-reviewed allocations", () => {
+    const historical = historicalContainmentAction();
+    const generic = containmentAction(historical.to, [
+      { marketParams: historicalMarkets.usd0pp, assets: 0n },
+      { marketParams: historicalMarkets.ptUsd0pp, assets: 0n },
+      { marketParams: historicalMarkets.cbBtcDestination, assets: maxUint256 },
+    ], historical.description);
+    expect(generic.data).toBe(historical.data);
   });
 
   it("rejects delegatecall operations", () => {
