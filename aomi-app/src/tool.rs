@@ -39,6 +39,11 @@ const SIMULATE_BATCH: &str = "simulate_batch";
 const MAX_UINT256: &str =
     "115792089237316195423570985008687907853269984665640564039457584007913129639935";
 const REALLOCATE_SELECTOR: &str = "0x7299aa31";
+/// Canonical ABI signature behind [`REALLOCATE_SELECTOR`]:
+/// `MarketAllocation[]` = `(MarketParams, uint256)[]` with the 5-field
+/// `MarketParams` tuple nested, not flattened.
+const REALLOCATE_SIGNATURE: &str =
+    "reallocate(((address,address,address,address,uint256),uint256)[])";
 const ETHEREUM_RPC: &str = "https://rpc.flashbots.net";
 const ETHEREUM_RPC_FALLBACKS: [&str; 3] = [
     ETHEREUM_RPC,
@@ -1075,11 +1080,34 @@ fn simulation_route(
     if !calldata.starts_with(REALLOCATE_SELECTOR) {
         return Err("encoded calldata has the wrong MetaMorpho selector".to_owned());
     }
+    // The routed stage step is rendered back through the model, and a
+    // re-typed ~900-char raw hex string does not survive that round trip
+    // (observed as `hex length must be even` stage rejections). Structured
+    // encode args are short enough to copy faithfully; the host ABI encoder
+    // produces the same bytes, and finalize_simulation still enforces
+    // byte-identity between the simulated calldata and the app's own
+    // encoding, so a mistranscribed argument fails closed there.
+    let encode_args = args
+        .allocations
+        .iter()
+        .map(|allocation| {
+            json!([
+                [
+                    allocation.market.loan_token,
+                    allocation.market.collateral_token,
+                    allocation.market.oracle,
+                    allocation.market.irm,
+                    allocation.market.lltv,
+                ],
+                allocation.assets,
+            ])
+        })
+        .collect::<Vec<_>>();
     let stage_args = json!({
         "to": args.vault,
         "chain_id": args.chain_id,
         "description": format!("Fork-simulate manager-selected Morpho plan {} for signal {}", args.plan_id, args.risk_signal_id),
-        "data": { "raw": calldata },
+        "data": { "encode": { "signature": REALLOCATE_SIGNATURE, "args": [encode_args] } },
         "value": "0",
         "kind": "vault_risk_off_simulation",
         "protocol": "morpho",
@@ -1324,7 +1352,7 @@ impl DynAomiTool for FinalizeSimulation {
                 "to": args.vault,
                 "value": "0",
                 "operation": 0,
-                "function": "reallocate((address,address,address,address,uint256,uint256)[])",
+                "function": REALLOCATE_SIGNATURE,
                 "selector": REALLOCATE_SELECTOR,
                 "data": calldata,
                 "decoded_allocations": before_after,
@@ -1572,6 +1600,35 @@ mod tests {
                 .iter()
                 .all(|step| step.tool != "evm_commit_txs")
         );
+    }
+
+    #[test]
+    fn reallocate_signature_matches_pinned_selector() {
+        let hash = alloy_primitives::keccak256(REALLOCATE_SIGNATURE.as_bytes());
+        assert_eq!(format!("0x{}", hex::encode(&hash[..4])), REALLOCATE_SELECTOR);
+    }
+
+    /// The staged step travels back through the model, so it must carry short
+    /// structured encode args — never a raw hex blob the model has to retype.
+    #[test]
+    fn simulation_route_stages_structured_encode_args() {
+        let route = simulation_route(route_args(), "0x0000000000000000000000000000000000000001".to_owned()).unwrap();
+        let stage = route
+            .routes
+            .iter()
+            .find(|step| step.tool == EVM_STAGE_TX)
+            .expect("route must stage through evm_stage_tx");
+        assert!(stage.args.pointer("/data/raw").is_none());
+        assert_eq!(
+            stage.args.pointer("/data/encode/signature").and_then(Value::as_str),
+            Some(REALLOCATE_SIGNATURE)
+        );
+        let encode_args = stage
+            .args
+            .pointer("/data/encode/args")
+            .and_then(Value::as_array)
+            .expect("encode args present");
+        assert_eq!(encode_args.len(), 1, "one tuple-array parameter");
     }
 
     #[test]
