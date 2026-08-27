@@ -20,6 +20,7 @@ The operating model is explicit: Gauntlet (or another manager) owns the risk dec
 - Nine typed Aomi tools covering live state, policy, planning, simulation, approval packaging, replay, verification, and evidence export
 - Production `evm-core` route: `evm_stage_tx → simulate_batch → finalize_simulation`; there is no commit, signing, or broadcast step
 - Operator console with the exact containment timeline, provenance labels, execution-route explainer, and hash checker
+- A live **Control room** driving the deployed `liqsteward` Aomi app through a server-side console BFF: operator threads, streamed tool activity, plan selection, and unsigned Safe package download
 
 ## The control finding that earns the meeting
 
@@ -55,6 +56,22 @@ cargo check --manifest-path aomi-app/Cargo.toml
 ```
 
 The hosted Aomi app performs its own public RPC and Morpho reads; the local API URL is only for the standalone dashboard.
+
+### Control room ↔ deployed Aomi app
+
+The default **Control room** view operates the deployed `liqsteward` app. The browser never talks to the Aomi backend directly; the console BFF in `apps/api/src/aomi.ts` owns the backend URL, the app binding (community-hosted apps resolve by `application_id`, not name), and the thread lifecycle:
+
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /api/console/config` | App name, backend, and live deployment status |
+| `POST /api/console/threads` | Create an operator thread bound to the deployed app |
+| `POST /api/console/threads/:id/messages` | Start an async agent turn |
+| `GET /api/console/threads/:id/state` | Poll transcript, tool activity, and processing state |
+| `POST /api/console/threads/:id/interrupt` | Stop the running turn |
+
+Configure with `AOMI_BACKEND_URL` (default `https://api-staging.aomi.dev`) and `AOMI_APP_NAME` (default `liqsteward`).
+
+Deploying the Rust app itself goes through the Aomi community platform: register the repo as a project, `POST /api/projects/:id/deploy` with a pushed commit SHA, wait for the platform CI artifact, then activate the release. The app manifest pins every tool-parameter property to a typed schema — model providers reject untyped nodes, which rejects the entire app at load time.
 
 ## Product boundary
 

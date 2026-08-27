@@ -18,6 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { ControlRoom } from "./ControlRoom";
 
 type Tx = {
   hash: string;
@@ -105,6 +106,7 @@ function TransactionRow({ tx, active, onSelect }: { tx: Tx; active: boolean; onS
 }
 
 export function App() {
+  const [view, setView] = useState<"control" | "replay">("control");
   const [data, setData] = useState<Replay | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [activeHash, setActiveHash] = useState<string | null>(null);
@@ -120,8 +122,6 @@ export function App() {
       .catch((reason: Error) => setError(reason.message));
   }, []);
 
-  const active = useMemo(() => data?.timeline.find(({ hash }) => hash === activeHash), [data, activeHash]);
-
   async function verify() {
     setVerifying(true);
     setVerification(null);
@@ -135,15 +135,21 @@ export function App() {
     setContainment(await response.json());
   }
 
-  if (error) return <main className="loading"><AlertTriangle /><h1>Replay unavailable</h1><p>{error}</p></main>;
-  if (!data) return <main className="loading"><LoaderCircle className="spin" /><p>Reconstructing onchain evidence…</p></main>;
+  const replayBody = error
+    ? <div className="loading inline"><AlertTriangle /><h1>Replay unavailable</h1><p>{error}</p></div>
+    : !data
+      ? <div className="loading inline"><LoaderCircle className="spin" /><p>Reconstructing onchain evidence…</p></div>
+      : null;
 
-  const { fixture, summary, timeline } = data;
   return (
     <div className="shell">
       <header className="topbar">
         <div className="brand"><span className="brand-mark"><ShieldCheck size={20} /></span><span>LIQSTEWARD</span><i>VAULT CONTROL</i></div>
-        <nav><span className="live"><i /> ETHEREUM LIVE</span><span>Replay <b>USD0++ / 2025-01</b></span></nav>
+        <nav>
+          <button className={`nav-tab ${view === "control" ? "active" : ""}`} onClick={() => setView("control")}>Control room</button>
+          <button className={`nav-tab ${view === "replay" ? "active" : ""}`} onClick={() => setView("replay")}>Replay <b>USD0++ / 2025-01</b></button>
+          <span className="live"><i /> ETHEREUM LIVE</span>
+        </nav>
         <div className="top-actions">
           <a className="button ghost" href="/api/incidents/usd0pp/evidence" download><Download size={14} /> Evidence</a>
           <button className="button primary" onClick={openContainment}><TerminalSquare size={14} /> Inspect route</button>
@@ -151,6 +157,41 @@ export function App() {
       </header>
 
       <main>
+        {view === "control" && <ControlRoom />}
+        {view === "replay" && replayBody}
+        {view === "replay" && data && <ReplayView
+          data={data}
+          activeHash={activeHash}
+          setActiveHash={setActiveHash}
+          verifyHash={verifyHash}
+          setVerifyHash={setVerifyHash}
+          verification={verification}
+          verifying={verifying}
+          verify={verify}
+        />}
+        <footer><span><Activity size={13} /> PUBLIC DATA PROTOTYPE</span><p>Built for outside-in validation. No Gauntlet credentials, signing authority, or endorsement implied.</p><span>Schema risk-off-evidence/v1</span></footer>
+      </main>
+
+      {containment && <div className="modal-backdrop" onClick={() => setContainment(null)}><section className="modal" onClick={(event) => event.stopPropagation()}><header><div><span className="section-kicker">LIQSTEWARD · HISTORICAL PREVIEW</span><h2>Exact calldata enters the Aomi simulation pipeline.</h2></div><button onClick={() => setContainment(null)}><X /></button></header><div className="route-summary"><code>evm_stage_tx</code><i>→</i><code>simulate_batch</code><i>→</i><code>finalize_simulation</code><i>→</i><code>unsigned Safe JSON</code></div><div className="modal-warning"><AlertTriangle size={17} /><p><b>This USD0++ payload is a counterfactual preview, not a live action.</b><br />For a current incident, the manager reviews exact allocations. LiqSteward stages and simulates the calldata, then produces an unsigned package for the manager-controlled Safe.</p></div><pre>{JSON.stringify(containment, null, 2)}</pre><div className="modal-actions"><a href="/api/incidents/usd0pp/containment" className="button ghost" target="_blank"><ExternalLink size={14} /> Open preview JSON</a><button className="button primary" onClick={() => void navigator.clipboard.writeText(JSON.stringify(containment, null, 2))}><Copy size={14} /> Copy preview</button></div></section></div>}
+    </div>
+  );
+}
+
+function ReplayView({ data, activeHash, setActiveHash, verifyHash, setVerifyHash, verification, verifying, verify }: {
+  data: Replay;
+  activeHash: string | null;
+  setActiveHash: (hash: string) => void;
+  verifyHash: string;
+  setVerifyHash: (hash: string) => void;
+  verification: Verification | null;
+  verifying: boolean;
+  verify: () => Promise<void>;
+}) {
+  const { fixture, summary, timeline } = data;
+  const active = useMemo(() => timeline.find(({ hash }) => hash === activeHash), [timeline, activeHash]);
+
+  return (
+    <>
         <section className="hero">
           <div>
             <div className="eyebrow"><CircleDot size={13} /> INCIDENT REPLAY <span>/</span> CLOSED</div>
@@ -230,11 +271,6 @@ export function App() {
           <div className="verify-control"><div className="hash-input"><Search size={16} /><input value={verifyHash} onChange={(event) => setVerifyHash(event.target.value)} spellCheck={false} /></div><button className="button primary" onClick={verify} disabled={verifying}>{verifying ? <LoaderCircle className="spin" size={15} /> : <FileCheck2 size={15} />} Verify receipt</button></div>
           {verification && <div className="verification-result"><div className={`verification-title ${verification.status}`}><ShieldCheck size={18} /><b>{verification.status === "confirmed" ? "Receipt confirmed" : verification.status}</b><span>{verification.assertions.filter(({ passed }) => passed).length}/{verification.assertions.length} assertions passed</span></div><div className="assertions">{verification.assertions.map((assertion) => <div key={assertion.label}><span className={assertion.passed ? "pass" : "fail"}>{assertion.passed ? <Check size={13} /> : <X size={13} />}</span><p><b>{assertion.label}</b><small>{assertion.evidence}</small></p></div>)}</div></div>}
         </section>
-
-        <footer><span><Activity size={13} /> PUBLIC DATA PROTOTYPE</span><p>Built for outside-in validation. No Gauntlet credentials, signing authority, or endorsement implied.</p><span>Schema risk-off-evidence/v1</span></footer>
-      </main>
-
-      {containment && <div className="modal-backdrop" onClick={() => setContainment(null)}><section className="modal" onClick={(event) => event.stopPropagation()}><header><div><span className="section-kicker">LIQSTEWARD · HISTORICAL PREVIEW</span><h2>Exact calldata enters the Aomi simulation pipeline.</h2></div><button onClick={() => setContainment(null)}><X /></button></header><div className="route-summary"><code>evm_stage_tx</code><i>→</i><code>simulate_batch</code><i>→</i><code>finalize_simulation</code><i>→</i><code>unsigned Safe JSON</code></div><div className="modal-warning"><AlertTriangle size={17} /><p><b>This USD0++ payload is a counterfactual preview, not a live action.</b><br />For a current incident, the manager reviews exact allocations. LiqSteward stages and simulates the calldata, then produces an unsigned package for the manager-controlled Safe.</p></div><pre>{JSON.stringify(containment, null, 2)}</pre><div className="modal-actions"><a href="/api/incidents/usd0pp/containment" className="button ghost" target="_blank"><ExternalLink size={14} /> Open preview JSON</a><button className="button primary" onClick={() => void navigator.clipboard.writeText(JSON.stringify(containment, null, 2))}><Copy size={14} /> Copy preview</button></div></section></div>}
-    </div>
+    </>
   );
 }

@@ -12,6 +12,7 @@ import {
   verifyTransaction,
 } from "@liqsteward/core";
 import { isAddress, isHash, type Hex } from "viem";
+import { registerAomiConsole, type AomiConsoleOptions } from "./aomi.js";
 
 type ContainmentEncodingBody = {
   chain_id: number;
@@ -76,12 +77,16 @@ async function vaultAllocations(address: string, chainId: number) {
   return vault;
 }
 
-export function buildApp(options: { rpcUrl?: string; webOrigin?: string } = {}) {
+export function buildApp(
+  options: { rpcUrl?: string; webOrigin?: string; aomi?: AomiConsoleOptions } = {},
+) {
   const app = Fastify({ logger: true });
   const fixture = usd0ppFixture();
   const rpcUrl = options.rpcUrl;
 
   app.register(cors, { origin: options.webOrigin ?? true });
+
+  registerAomiConsole(app, options.aomi);
 
   app.get("/api/health", async () => ({ ok: true, service: "liqsteward", version: "0.2.0" }));
 
