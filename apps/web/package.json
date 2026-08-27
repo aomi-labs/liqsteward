@@ -10,6 +10,10 @@
     "preview": "vite preview --port 4311"
   },
   "dependencies": {
+    "@aomi-labs/react": "0.6.2",
+    "@aomi-labs/widget-lib": "2.0.3",
+    "@assistant-ui/react": "0.14.26",
+    "@assistant-ui/react-markdown": "0.14.5",
     "@vitejs/plugin-react": "latest",
     "lucide-react": "^0.468.0",
     "vite": "latest",

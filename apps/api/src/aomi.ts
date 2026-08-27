@@ -1,19 +1,15 @@
 import type { FastifyInstance } from "fastify";
 import { randomUUID } from "node:crypto";
+import { Readable } from "node:stream";
 
 /**
  * Operator-console BFF for the deployed LiqSteward Aomi app.
  *
- * The browser never talks to the Aomi backend directly: this thin server
- * layer owns the backend URL, the app binding, and the thread lifecycle, so
- * the deployed console can later add manager authentication and API keys in
- * exactly one place. Wire protocol (all requests carry `X-Session-Id` /
- * `X-Thread-Id` headers holding the thread id):
- *
- *   POST {backend}/api/threads?app={app}          create thread bound to app
- *   POST {backend}/api/thread/chat?app=&message=  start an async agent turn
- *   GET  {backend}/api/thread/state?app=          poll messages + processing
- *   POST {backend}/api/thread/interrupt?app=      stop the running turn
+ * The browser never talks to the Aomi backend directly. This layer provides
+ * deployment status plus a same-origin, streaming relay for the native widget.
+ * The relay owns the immutable app binding and forwards only explicit runtime
+ * paths and headers, leaving account, secret, signing, and broadcast surfaces
+ * inaccessible from the LiqSteward frontend.
  */
 
 export type AomiConsoleOptions = {
@@ -25,10 +21,19 @@ export type AomiConsoleOptions = {
   fetchImpl?: typeof fetch;
 };
 
-type ChatBody = { message?: string };
-
-const THREAD_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-const MAX_MESSAGE_LENGTH = 8000;
+const WIDGET_RUNTIME_PREFIX = "/api/aomi";
+const WIDGET_RUNTIME_PATH = /^(?:\/api\/thread\/(?:apps|chat|events|interrupt|model|models|state|updates)|\/api\/threads(?:\/[^/]+(?:\/(?:archive|unarchive))?)?|\/api\/exec\/simulate)$/;
+const WIDGET_DISCOVERY_PATHS = new Set(["/api/thread/apps", "/api/thread/models"]);
+const WIDGET_RUNTIME_METHODS = new Set(["GET", "POST", "PATCH", "DELETE"]);
+const WIDGET_REQUEST_HEADERS = [
+  "accept",
+  "content-type",
+  "x-session-id",
+  "x-thread-id",
+  "aomi-app-key",
+  "last-event-id",
+] as const;
+const WIDGET_RESPONSE_HEADERS = ["content-type", "cache-control", "x-request-id"] as const;
 
 function upstreamHeaders(threadId: string): Record<string, string> {
   return { "X-Session-Id": threadId, "X-Thread-Id": threadId };
@@ -86,62 +91,65 @@ export function registerAomiConsole(app: FastifyInstance, options: AomiConsoleOp
     return status;
   }
 
-  async function appQuery(extra: Record<string, string> = {}): Promise<URLSearchParams> {
-    if (applicationId === null) await refreshAppStatus();
-    const query = new URLSearchParams({ app: appName, ...extra });
-    if (applicationId !== null) query.set("application_id", String(applicationId));
-    return query;
-  }
-
   app.get("/api/console/config", async () => ({
     app: appName,
     backendUrl,
+    runtimeUrl: WIDGET_RUNTIME_PREFIX,
     appStatus: await refreshAppStatus(),
   }));
 
-  app.post("/api/console/threads", async (_request, reply) => {
-    const threadId = randomUUID();
-    const upstream = await proxy(`/api/threads?${await appQuery()}`, threadId, { method: "POST" });
-    if (upstream.status !== 200) {
-      return reply.code(502).send({ error: "failed to create Aomi thread", upstream: upstream.body });
+  // The native widget uses session headers and an SSE stream that browsers
+  // cannot send directly to the public backend from an arbitrary site. Keep
+  // the browser on this origin and proxy only the runtime surface the widget
+  // needs. Credentials, cookies, arbitrary paths, and arbitrary headers never
+  // cross this boundary.
+  app.all<{ Params: { "*": string } }>(`${WIDGET_RUNTIME_PREFIX}/*`, async (request, reply) => {
+    const upstreamPath = (request.raw.url ?? request.url).slice(WIDGET_RUNTIME_PREFIX.length);
+    const upstreamPathname = new URL(upstreamPath, "http://aomi.invalid").pathname;
+    if (!WIDGET_RUNTIME_PATH.test(upstreamPathname) || !WIDGET_RUNTIME_METHODS.has(request.method)) {
+      return reply.code(404).send({ error: "unsupported Aomi widget runtime route" });
     }
-    return { threadId, app: appName, upstream: upstream.body };
-  });
 
-  app.post<{ Params: { threadId: string }; Body: ChatBody }>(
-    "/api/console/threads/:threadId/messages",
-    async (request, reply) => {
-      const { threadId } = request.params;
-      if (!THREAD_ID_PATTERN.test(threadId)) {
-        return reply.code(400).send({ error: "threadId must be a lowercase UUID" });
+    const headers = new Headers();
+    for (const name of WIDGET_REQUEST_HEADERS) {
+      const value = request.headers[name];
+      if (typeof value === "string") headers.set(name, value);
+    }
+
+    let body: BodyInit | undefined;
+    if (request.method !== "GET" && request.method !== "HEAD" && request.body !== undefined) {
+      body = typeof request.body === "string"
+        ? request.body
+        : Buffer.isBuffer(request.body)
+          ? request.body.toString()
+          : JSON.stringify(request.body);
+    }
+
+    const upstreamUrl = new URL(upstreamPath, `${backendUrl}/`);
+    const needsAppScope = upstreamPathname.startsWith("/api/threads")
+      || (upstreamPathname.startsWith("/api/thread/") && !WIDGET_DISCOVERY_PATHS.has(upstreamPathname));
+    if (needsAppScope) {
+      if (applicationId === null) await refreshAppStatus();
+      if (applicationId === null) {
+        return reply.code(503).send({ error: "LiqSteward application identity is unavailable" });
       }
-      const message = request.body?.message?.trim();
-      if (!message) return reply.code(400).send({ error: "message is required" });
-      if (message.length > MAX_MESSAGE_LENGTH) {
-        return reply.code(400).send({ error: `message must be at most ${MAX_MESSAGE_LENGTH} characters` });
-      }
-      const upstream = await proxy(`/api/thread/chat?${await appQuery({ message })}`, threadId, { method: "POST" });
-      return reply.code(upstream.status === 200 ? 200 : 502).send(upstream.body);
-    },
-  );
-
-  app.get<{ Params: { threadId: string } }>("/api/console/threads/:threadId/state", async (request, reply) => {
-    const { threadId } = request.params;
-    if (!THREAD_ID_PATTERN.test(threadId)) {
-      return reply.code(400).send({ error: "threadId must be a lowercase UUID" });
+      upstreamUrl.searchParams.set("app", appName);
+      upstreamUrl.searchParams.set("application_id", String(applicationId));
     }
-    const upstream = await proxy(`/api/thread/state?${await appQuery()}`, threadId);
-    return reply.code(upstream.status === 200 ? 200 : 502).send(upstream.body);
-  });
 
-  app.post<{ Params: { threadId: string } }>("/api/console/threads/:threadId/interrupt", async (request, reply) => {
-    const { threadId } = request.params;
-    if (!THREAD_ID_PATTERN.test(threadId)) {
-      return reply.code(400).send({ error: "threadId must be a lowercase UUID" });
-    }
-    const upstream = await proxy(`/api/thread/interrupt?${await appQuery()}`, threadId, {
-      method: "POST",
+    const upstream = await fetchImpl(upstreamUrl, {
+      method: request.method,
+      headers,
+      body,
     });
-    return reply.code(upstream.status === 200 ? 200 : 502).send(upstream.body);
+    reply.code(upstream.status);
+    for (const name of WIDGET_RESPONSE_HEADERS) {
+      const value = upstream.headers.get(name);
+      if (value) reply.header(name, value);
+    }
+    if (!upstream.body) return reply.send();
+    return reply.send(Readable.fromWeb(
+      upstream.body as unknown as Parameters<typeof Readable.fromWeb>[0],
+    ));
   });
 }

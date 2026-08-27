@@ -17,10 +17,24 @@
     "refresh:incident": "tsx scripts/refresh-usd0pp.ts",
     "start": "npm run start -w @liqsteward/api"
   },
+  "dependencies": {
+    "@assistant-ui/core": "0.2.20",
+    "@assistant-ui/react": "0.14.26",
+    "@assistant-ui/react-markdown": "0.14.5",
+    "@assistant-ui/store": "0.2.19",
+    "@assistant-ui/tap": "0.9.3"
+  },
   "devDependencies": {
     "concurrently": "^9.2.1",
     "tsx": "^4.20.5",
     "typescript": "^5.9.2"
+  },
+  "overrides": {
+    "@assistant-ui/core": "0.2.20",
+    "@assistant-ui/react": "0.14.26",
+    "@assistant-ui/react-markdown": "0.14.5",
+    "@assistant-ui/store": "0.2.19",
+    "@assistant-ui/tap": "0.9.3"
   },
   "engines": {
     "node": ">=20"

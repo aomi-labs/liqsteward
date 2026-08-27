@@ -59,15 +59,16 @@ The hosted Aomi app performs its own public RPC and Morpho reads; the local API 
 
 ### Control room ↔ deployed Aomi app
 
-The default **Control room** view operates the deployed `liqsteward` app. The browser never talks to the Aomi backend directly; the console BFF in `apps/api/src/aomi.ts` owns the backend URL, the app binding (community-hosted apps resolve by `application_id`, not name), and the thread lifecycle:
+The default **Control room** view embeds Aomi's native widget UI for Markdown, streaming, thread persistence, and tool-call traces while operating the deployed `liqsteward` app. The browser never talks to the Aomi backend directly; the console BFF in `apps/api/src/aomi.ts` streams the widget runtime on the same origin and enforces the configured app name plus immutable `application_id` on every scoped thread request.
 
 | Endpoint | Purpose |
 | --- | --- |
 | `GET /api/console/config` | App name, backend, and live deployment status |
-| `POST /api/console/threads` | Create an operator thread bound to the deployed app |
-| `POST /api/console/threads/:id/messages` | Start an async agent turn |
-| `GET /api/console/threads/:id/state` | Poll transcript, tool activity, and processing state |
-| `POST /api/console/threads/:id/interrupt` | Stop the running turn |
+| `/api/aomi/api/thread/*` | Allowlisted native chat, state, event, model, app, and SSE routes |
+| `/api/aomi/api/threads/*` | Allowlisted native thread lifecycle routes |
+| `POST /api/aomi/api/exec/simulate` | Native batch-simulation transport |
+
+The relay forwards only the runtime's explicit method/path/header allowlist. It never forwards browser cookies or authorization headers, and account, secret, signing, and broadcast routes remain outside the surface.
 
 Configure with `AOMI_BACKEND_URL` (default `https://api-staging.aomi.dev`) and `AOMI_APP_NAME` (default `liqsteward`).
 
