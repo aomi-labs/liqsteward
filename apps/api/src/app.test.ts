@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { buildApp } from "./app.js";
 
-describe("risk-off api", () => {
-  it("serves the replay with a material reconciliation gap", async () => {
+describe("LiqSteward API", () => {
+  it("serves the exact nine-transaction containment replay", async () => {
     const app = buildApp();
     const response = await app.inject({ method: "GET", url: "/api/incidents/usd0pp" });
     expect(response.statusCode).toBe(200);
     const body = response.json();
     expect(body.summary.observedTransactions).toBe(9);
-    expect(body.summary.riskInTransactions).toBe(2);
-    expect(body.summary.riskOffTransactions).toBe(7);
-    expect(body.summary.discrepancy.severity).toBe("material");
+    expect(body.summary.riskInTransactions).toBe(0);
+    expect(body.summary.riskOffTransactions).toBe(9);
+    expect(body.summary.discrepancy).toBeNull();
     await app.close();
   });
 

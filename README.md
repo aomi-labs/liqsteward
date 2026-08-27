@@ -1,38 +1,31 @@
-# Risk-Off Pilot
+# LiqSteward
 
-Independent incident assurance for onchain vault operators.
+Manager-controlled operations and execution assurance for onchain vaults.
 
-This repository is a forward-deployed prototype for a specific Gauntlet sales conversation: **do not replace Gauntlet's risk models or automation; independently prove what its incident response saw, proposed, executed, and left behind.**
+LiqSteward is a forward-deployed control plane for a specific Gauntlet sales conversation: **do not replace Gauntlet's risk models or automation; independently prove what its incident response saw, proposed, executed, and left behind.**
 
-The pilot reconstructs the January 2025 USD0++ response for the then-named **Gauntlet USDC Balanced** Morpho vault (`0x8eB6…d458`). It reconciles Gauntlet's public incident narrative with Morpho reallocation events and canonical Ethereum receipts, exposes the authority path behind each action, and turns a manager-approved current allocation into an Aomi-native stage/simulate/commit route.
+The pilot reconstructs the January 2025 USD0++ response for the then-named **Gauntlet USDC Balanced** Morpho vault (`0x8eB6…d458`) and now uses that same contract—currently **Gauntlet USDC Core**—as the first live control-room target. It turns a risk signal into deterministic alternatives, validates a manager-selected plan against fresh state, and runs the exact calldata through Aomi's stage-and-simulate pipeline before producing an unsigned Safe package.
 
-The operating model is explicit: Gauntlet (or another manager) owns the risk decision, the connected allocator wallet owns execution authority, and Aomi is the policy-bound execution and assurance copilot. Aomi is not the curator, signer, or custodian.
+The operating model is explicit: Gauntlet (or another manager) owns the risk decision, a manager-controlled Safe owns approval and execution authority, and LiqSteward is the policy-bound planning and assurance product powered by Aomi's EVM runtime. Neither LiqSteward nor Aomi is the curator, signer, custodian, or broadcaster.
 
 ## What is real
 
-- Reproducible extraction from the public [Morpho GraphQL API](https://docs.morpho.org/developers/api/morpho-vaults/)
-- 27 indexed reallocation events grouped into nine Ethereum transactions
-- Exact USDC state-transition accounting across direct USD0++ and PT-USD0++ markets
-- Live receipt verification through two public Ethereum RPC fallbacks
-- Receipt-level proof of `envelope signer → execution contract → indexed allocator → vault event emitter`
+- A pinned live snapshot combining Morpho indexed allocations/rates with onchain roles, queues, caps, timelocks, pending changes, and known allocator checks
+- The exact nine public containment transaction hashes and canonical block timestamps
+- Chain-derived USD0++ and PT-USD0++ market identifiers and exact withdrawn exposure totals
+- Live receipt verification through bounded public Ethereum RPC fallbacks
 - Exact MetaMorpho `reallocate` calldata encoding
-- Safe Transaction Builder-compatible unsigned JSON for the historical review artifact
-- Seven typed Aomi tools covering replay, verification, vault inspection, preview, execution, residual proof, and evidence export
-- Production `evm-core` route: `evm_stage_tx → simulate_batch → evm_commit_txs`, with simulation failure stopping before commit
-- Operator console with transaction timeline, provenance labels, reconciliation finding, execution-route explainer, and hash checker
+- Deterministic pilot policy and full-exit, policy-limited tranche, and no-change planning
+- Safe Transaction Builder-compatible unsigned JSON generated only after a passing simulation
+- Nine typed Aomi tools covering live state, policy, planning, simulation, approval packaging, replay, verification, and evidence export
+- Production `evm-core` route: `evm_stage_tx → simulate_batch → finalize_simulation`; there is no commit, signing, or broadcast step
+- Operator console with the exact containment timeline, provenance labels, execution-route explainer, and hash checker
 
-## The finding that earns the meeting
+## The control finding that earns the meeting
 
-Gauntlet's [public incident write-up](https://vaultbook.gauntlet.xyz/resources/market-volatility) says nine transactions withdrew all USD0++ exposure. The public Morpho incident window does contain nine unique reallocation transactions—but the first two add direct USD0++ exposure and the later seven are pure risk-off calls.
+Gauntlet's [public incident write-up](https://vaultbook.gauntlet.xyz/resources/market-volatility) maps to nine canonical Ethereum transactions from `2025-01-10T02:46:23Z` through `2025-01-10T09:01:35Z`. A broader Morpho query beginning before that response window also captures normal risk-in reallocations. The earlier prototype incorrectly mixed those windows; v0.2 pins the nine containment hashes explicitly.
 
-That is not presented as a Gauntlet error. It is an unresolved control question:
-
-- Does “nine” count Safe transactions rather than Morpho reallocations?
-- Does Gauntlet use a narrower response window?
-- Were the first two calls part of pre-incident yield operations?
-- What internal completion condition established “all exposure withdrawn”?
-
-The product makes that ambiguity visible without inventing an answer. Every claim is labeled as `verified-chain`, `official-claim`, `derived`, `operator-input`, or `unverified`.
+That correction is itself the product lesson: incident identity, time window, affected markets, and completion condition must be first-class machine inputs. An assurance tool cannot infer them from a loose indexer query and still claim to reproduce the manager's decision.
 
 ## Run it
 
@@ -51,7 +44,7 @@ Verify the representative transaction directly:
 
 ```bash
 curl -sS \
-  http://127.0.0.1:4310/api/transactions/0x895b26dd32f8c787ee51276aa802e0ff9c0e080e5e9aa3f6fbdc767c13446d2d/verify \
+  http://127.0.0.1:4310/api/transactions/0xe9b338d19c1f412ff5a0db052dcb3d3ef2f91e613ab87e6fe7131d00263099ab/verify \
   | jq
 ```
 
@@ -65,12 +58,11 @@ The hosted Aomi app performs its own public RPC and Morpho reads; the local API 
 
 ## Product boundary
 
-There are two deliberately different paths:
+The app is deliberately restricted to one Ethereum vault and one approval topology. `simulate_plan` does not execute: it requires a manager-selected plan, re-reads live state, enforces the assumed 15% per-action limit and canonical idle destination, ABI-encodes exact MetaMorpho calldata, then routes only through `evm_stage_tx` and `simulate_batch`. A failed simulation stops. A passing simulation invokes `finalize_simulation`, which verifies target/calldata identity and emits unsigned Safe Transaction Builder JSON.
 
-- `preview_containment` returns the USD0++ historical artifact with `executable: false`. It explains exact calldata and authority shape, and must not be executed against current state.
-- `execute_containment` accepts exact manager-reviewed current allocations, ABI-encodes them inside the SDK 4.0.0 Rust plugin, and hands raw calldata to Aomi's `evm-core` namespace. The host stages it, requires a passing batch simulation, then requests approval from the connected authorized allocator before commit.
+No app tool exposes `evm_commit_txs`. The manager imports or otherwise reviews the unsigned package in their own Safe workflow. If a transaction is later executed independently, `verify_execution` checks the canonical receipt and residual indexed exposure.
 
-The dashboard API never stages, signs, or submits transactions, and the deployed Aomi app does not depend on that API for execution. This pilot is deliberately restricted to Ethereum mainnet (`chain_id = 1`). The route does not run unless `confirmed` is true, every source target is zero, the final destination receives `uint256 max`, all loan tokens match, and a connected EVM wallet is present. After broadcast, `verify_execution` reads the canonical Ethereum receipt and current Morpho GraphQL allocation directly, then compares residual exposure with the manager's declared threshold.
+One assurance gap remains explicit: today's generic `simulate_batch` proves atomic call success, calldata identity, and allocator authorization by non-revert, but does not yet emit arbitrary post-call state reads from the same ephemeral fork. Direct fork post-state assertions must be added to the host before the product claims simulated residual-exposure proof.
 
 ## System shape
 
@@ -82,12 +74,13 @@ flowchart LR
     E --> C["Operator console"]
     V --> C
     E --> P["Evidence package<br/>risk-off-evidence/v1"]
-    E --> B["Manager-reviewed<br/>target allocation"]
+    S["Live vault snapshot"] --> D["Deterministic policy<br/>and plan alternatives"]
+    D --> B["Manager-selected<br/>target allocation"]
     B --> X["In-plugin ABI encoder<br/>raw calldata only"]
     X --> T["evm_stage_tx"]
     T --> Q["simulate_batch<br/>STOP on failure"]
-    Q --> W["Allocator wallet<br/>approval"]
-    W --> K["evm_commit_txs"]
+    Q --> U["Unsigned Safe package<br/>manager review"]
+    U -. "outside Aomi" .-> K["Manager Safe execution"]
     K --> Z["verify_execution<br/>receipt + residual"]
     C --> A["Aomi operator tools"]
     P --> A
@@ -104,29 +97,32 @@ flowchart LR
 | `POST /api/containment/encode` | Dashboard-side deterministic encoder retained for independent parity checks; not used by the deployed Aomi transaction route |
 | `GET /api/transactions/:hash/verify` | Canonical transaction, receipt, allocator-log, and block assertions |
 | `GET /api/vaults/:chainId/:address` | Current public Morpho V1 vault metadata |
-| `POST /api/executions/verify` | Verify receipt and residual risk-market allocation after host commit |
+| `POST /api/executions/verify` | Verify receipt and residual risk-market allocation after an independent manager execution |
 
 ## Aomi tools
 
 | Tool | Operator intent |
 | --- | --- |
-| `replay_incident` | Reconstruct exposure movements and unresolved discrepancies |
+| `replay_incident` | Return the exact nine containment hashes, timestamps, markets, and exposure totals |
 | `verify_transaction` | Prove the canonical receipt and authority path for a hash |
-| `inspect_vault` | Read current public vault roles and configuration |
-| `preview_containment` | Read the historical, non-executable payload explainer |
-| `execute_containment` | Stage reviewed raw calldata, enforce simulation, and request allocator-wallet commit approval |
-| `verify_execution` | Verify the receipt and residual exposure after broadcast |
+| `inspect_vault` | Build a pinned live state/configuration/authority snapshot |
+| `get_pilot_policy` | Show deterministic constraints and unresolved assumptions |
+| `plan_reallocation` | Generate and score full-exit, tranche, and no-change alternatives |
+| `simulate_plan` | Revalidate fresh state, stage exact calldata, and enforce fork simulation without commit |
+| `finalize_simulation` | Verify a passing simulation and produce unsigned Safe JSON |
+| `verify_execution` | Verify the receipt and residual exposure after an independent manager execution |
 | `export_evidence` | Export claims, provenance, metrics, and timeline |
 
 ## Four-week Gauntlet co-design conversion
 
-The outside-in prototype needs no Gauntlet access. Production co-design asks for only three narrow inputs:
+The outside-in prototype needs no Gauntlet access. Production co-design asks for only four narrow inputs:
 
 1. one sanitized internal alert/model-output payload;
 2. the current alert-to-operator approval topology and allocator wallet policy;
-3. the exact definition of acceptable residual exposure and containment completion.
+3. the exact definition of acceptable residual exposure and containment completion;
+4. confirmation of the Safe/allocator approval route and the assumed policy thresholds.
 
-The acceptance test is a historical incident selected by Gauntlet: ingest the alert, reconstruct affected exposure, produce exact reviewed calldata, run the Aomi stage/simulate/commit route against an authorized test environment, verify receipts, and produce a residual-exposure evidence package within their target response time.
+The acceptance test is a historical incident selected by Gauntlet: ingest the alert, reconstruct affected exposure, produce exact reviewed calldata, run the Aomi stage/simulate route against an authorized fork, return an unsigned manager-approval package, and compare the simulated proposal with the transaction Gauntlet actually executed.
 
 ## Sources and limitations
 

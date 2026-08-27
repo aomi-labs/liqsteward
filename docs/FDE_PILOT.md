@@ -2,18 +2,18 @@
 
 ## One-line sell
 
-**Keep your models and manager authority. Aomi turns the approved response into a simulated, wallet-approved execution route, then proves what landed and what risk remained.**
+**Keep your models and manager authority. Aomi turns a risk signal into policy-checked alternatives, fork-simulates the selected response, and returns an unsigned Safe approval package.**
 
 ## Demo script
 
-1. Open the USD0++ replay and state the public claim.
-2. Show nine observed reallocations, then reveal that two are risk-in and seven are risk-off.
-3. Select a risk-off transaction and walk the event-level asset movements.
-4. Verify its hash live. Show the outer signer, smart-account contract, allocator emitted by MetaMorpho, vault emitter, block match, and successful receipt.
-5. Open the execution-route explainer. Distinguish the historical `executable: false` preview from a current manager-approved action.
-6. Show the actual Aomi route: `evm_stage_tx → simulate_batch (stop on failure) → evm_commit_txs (allocator wallet approval) → verify_execution`.
-7. Export the evidence package.
-8. Ask: “Give us one sanitized alert, your allocator approval policy, and a historical incident. Can we beat your current alert-to-simulated-proposal time without taking over model or signing authority?”
+1. Run `inspect_vault` and show the exact RPC block, indexer block, roles, queues, caps, pending changes, allocations, and immediately withdrawable liquidity.
+2. Run `get_pilot_policy`. Separate deterministic constraints from assumptions awaiting Gauntlet confirmation.
+3. Submit a risk signal to `plan_reallocation` and compare full exit, 15%-limited tranche, and no-change alternatives.
+4. Select an admissible plan and run `simulate_plan`.
+5. Show the actual Aomi route: `evm_stage_tx → simulate_batch (stop on failure) → finalize_simulation`.
+6. Inspect the unsigned Safe Transaction Builder package and prove that the simulated calldata is byte-identical to the proposal.
+7. Open the USD0++ replay and verify one of the exact nine containment hashes live.
+8. Ask: “Give us one sanitized alert and your real policy/approval topology. Can we cut alert-to-Safe-ready time without taking over your models or signing authority?”
 
 ## Why Gauntlet should care
 
@@ -26,17 +26,25 @@ Gauntlet already has the optimizer, models, monitoring, rebalancing, and on-call
 - emitted events versus claimed exposure reduction;
 - final position versus an explicit residual-risk threshold.
 
-This is narrower than a vault-management platform and easier to adopt: it begins read-only and outside-in, then adds a manager-authorized execution route without taking custody or bypassing the wallet approval policy.
+This is narrower than a vault-management platform and easier to adopt: it begins read-only and outside-in, then adds planning, fork simulation, and approval packaging without taking custody or bypassing the wallet policy.
 
 ## Pilot deliverables
 
 - one adapter for a sanitized Gauntlet alert;
 - one historical incident chosen by Gauntlet;
 - one manager-approved target-allocation adapter;
-- one Aomi `evm-core` stage/simulate/commit route;
+- one Aomi `evm-core` stage/simulate route with no commit capability;
 - one residual-exposure policy definition;
+- one unsigned Safe approval package;
 - one operator evidence view;
 - one machine-readable completion certificate.
+
+## Production gates
+
+- Gauntlet confirms the market allowlist, safe-idle destination, cap/allocation constraints, and residual threshold.
+- Gauntlet confirms whether the curator Safe or a dedicated allocator Safe is the approval route.
+- Aomi `simulate_batch` gains generic post-call assertions so the same ephemeral fork directly proves resulting Morpho positions, caps, and withdrawable liquidity.
+- RPC access moves from public best-effort endpoints to an authenticated provider with archive guarantees and an explicit latency/error budget.
 
 ## Commercial wedge
 

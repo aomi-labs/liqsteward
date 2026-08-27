@@ -1,20 +1,21 @@
 {
-  "name": "risk-off-pilot",
+  "name": "liqsteward",
   "private": true,
   "type": "module",
   "version": "0.1.0",
-  "description": "Independent incident assurance for onchain vault operations",
+  "description": "Manager-controlled operations and execution assurance for onchain vaults",
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently -n api,web -c cyan,magenta \"npm run dev -w @risk-off/api\" \"npm run dev -w @risk-off/web\"",
-    "build": "npm run build -w @risk-off/core && npm run build -w @risk-off/api && npm run build -w @risk-off/web",
-    "test": "npm run test -w @risk-off/core && npm run test -w @risk-off/api",
+    "dev": "concurrently -n api,web -c cyan,magenta \"npm run dev -w @liqsteward/api\" \"npm run dev -w @liqsteward/web\"",
+    "build": "npm run build -w @liqsteward/core && npm run build -w @liqsteward/api && npm run build -w @liqsteward/web",
+    "build:web": "npm run build -w @liqsteward/core && npm run build -w @liqsteward/web",
+    "test": "npm run test -w @liqsteward/core && npm run test -w @liqsteward/api",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "refresh:incident": "tsx scripts/refresh-usd0pp.ts",
-    "start": "npm run start -w @risk-off/api"
+    "start": "npm run start -w @liqsteward/api"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

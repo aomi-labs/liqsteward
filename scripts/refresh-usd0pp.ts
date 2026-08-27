@@ -3,8 +3,10 @@ import { resolve } from "node:path";
 
 const MORPHO_API_URL = process.env.MORPHO_API_URL ?? "https://api.morpho.org/graphql";
 const VAULT = "0x8eB67A509616cd6A7c1B3c8C21D48FF57df3d458";
-const FROM = 1736452800;
-const TO = 1736488800;
+// Exact UTC bounds of the nine containment transactions named by Gauntlet's
+// Jan 9 9:46pm through Jan 10 4:02am (US Eastern) response window.
+const FROM = 1736477183;
+const TO = 1736499695;
 
 const query = `query IncidentReallocations {
   vaultReallocates(
@@ -47,7 +49,7 @@ type ApiEvent = {
   market: {
     marketId: string;
     lltv: string;
-    collateralAsset: { address: string; symbol: string };
+    collateralAsset: { address: string; symbol: string } | null;
     loanAsset: { address: string; symbol: string };
   };
 };
@@ -104,11 +106,11 @@ const fixture = {
     assets: String(event.assets),
     market: {
       id: event.market.marketId,
-      label: `${event.market.collateralAsset.symbol} / ${event.market.loanAsset.symbol}`,
-      collateralSymbol: event.market.collateralAsset.symbol,
-      collateralAddress: event.market.collateralAsset.address,
+      label: `${event.market.collateralAsset?.symbol ?? "IDLE"} / ${event.market.loanAsset.symbol}`,
+      collateralSymbol: event.market.collateralAsset?.symbol ?? "IDLE",
+      collateralAddress: event.market.collateralAsset?.address ?? "0x0000000000000000000000000000000000000000",
       loanSymbol: event.market.loanAsset.symbol,
-      lltv: event.market.lltv,
+      lltv: String(event.market.lltv),
     },
   })),
 };

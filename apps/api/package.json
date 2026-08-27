@@ -1,5 +1,5 @@
 {
-  "name": "@risk-off/api",
+  "name": "@liqsteward/api",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@fastify/cors": "^10.1.0",
-    "@risk-off/core": "0.1.0",
+    "@liqsteward/core": "0.1.0",
     "fastify": "^5.5.0",
     "viem": "^2.37.5",
     "zod": "^4.1.5"

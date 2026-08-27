@@ -9,9 +9,9 @@ export function safeBatch(actions: UnsignedAction[], chainId = 1): SafeBatch {
     chainId: String(chainId),
     createdAt: Date.now().toString(),
     meta: {
-      name: "Risk-Off Pilot — unsigned containment proposal",
+      name: "LiqSteward — unsigned containment proposal",
       description: "Human approval required. Generated independently; not endorsed by Gauntlet.",
-      source: "risk-off-pilot",
+      source: "liqsteward",
       txBuilderVersion: "1.18.0",
     },
     transactions: actions.map((action) => ({

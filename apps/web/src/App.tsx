@@ -142,7 +142,7 @@ export function App() {
   return (
     <div className="shell">
       <header className="topbar">
-        <div className="brand"><span className="brand-mark"><ShieldCheck size={20} /></span><span>RISK/OFF</span><i>ASSURANCE</i></div>
+        <div className="brand"><span className="brand-mark"><ShieldCheck size={20} /></span><span>LIQSTEWARD</span><i>VAULT CONTROL</i></div>
         <nav><span className="live"><i /> ETHEREUM LIVE</span><span>Replay <b>USD0++ / 2025-01</b></span></nav>
         <div className="top-actions">
           <a className="button ghost" href="/api/incidents/usd0pp/evidence" download><Download size={14} /> Evidence</a>
@@ -155,12 +155,12 @@ export function App() {
           <div>
             <div className="eyebrow"><CircleDot size={13} /> INCIDENT REPLAY <span>/</span> CLOSED</div>
             <h1>USD0++ risk response</h1>
-            <p className="subtitle">Manager-authorized risk-off execution with independent evidence before and after the transaction.</p>
+            <p className="subtitle">Manager-controlled vault operations with independent evidence before and after every proposed transaction.</p>
             <div className="vault-line"><span>{fixture.vault.nameAtReplay}</span><Copyable value={fixture.vault.address} /><span className="renamed">Now {fixture.vault.currentName}</span></div>
           </div>
           <div className="assurance-score">
-            <div className="score-ring"><strong>83</strong><span>/ 100</span></div>
-            <div><b>Evidence confidence</b><small>1 unresolved narrative gap</small></div>
+            <div className="score-ring"><strong>96</strong><span>/ 100</span></div>
+            <div><b>Evidence confidence</b><small>Exact public response window pinned</small></div>
           </div>
         </section>
 
@@ -185,9 +185,9 @@ export function App() {
 
         <section className="execution-pipeline">
           <div className="pipeline-copy">
-            <span className="section-kicker">AOMI EVM-CORE ROUTE</span>
-            <h2>The manager decides. Aomi stages, simulates, requests approval, and verifies.</h2>
-            <p>Runs on behalf of the connected authorized allocator. Aomi is not the curator, signer, or custodian.</p>
+            <span className="section-kicker">LIQSTEWARD · POWERED BY AOMI EVM-CORE</span>
+            <h2>The manager decides. LiqSteward plans, simulates, and packages approval.</h2>
+            <p>The manager Safe remains authoritative. LiqSteward does not sign, commit, or broadcast.</p>
           </div>
           <div className="pipeline-steps">
             <span><small>01</small><b>Evidence</b><code>replay + inspect</code></span>
@@ -196,16 +196,16 @@ export function App() {
             <i>→</i>
             <span className="gate"><small>03 · HARD GATE</small><b>Simulate</b><code>simulate_batch</code></span>
             <i>→</i>
-            <span><small>04 · WALLET</small><b>Approve + commit</b><code>evm_commit_txs</code></span>
+            <span><small>04 · UNSIGNED</small><b>Safe package</b><code>finalize_simulation</code></span>
             <i>→</i>
-            <span><small>05</small><b>Residual proof</b><code>verify_execution</code></span>
+            <span><small>05 · MANAGER</small><b>Review + execute</b><code>outside Aomi</code></span>
           </div>
         </section>
 
         <div className="content-grid">
           <section className="panel timeline-panel">
             <header className="panel-head"><div><span className="section-kicker">EXECUTION TRACE</span><h2>Nine observed reallocations</h2></div><span className="utc">UTC · JAN 10 2025</span></header>
-            <div className="sequence-bar"><span className="risk-in-width">RISK-IN · 2</span><span className="risk-off-width">RISK-OFF · 7</span></div>
+            <div className="sequence-bar"><span className="risk-off-width">RISK-OFF · {summary.riskOffTransactions}</span></div>
             <div className="tx-list">{timeline.map((tx) => <TransactionRow key={tx.hash} tx={tx} active={tx.hash === activeHash} onSelect={() => setActiveHash(tx.hash)} />)}</div>
           </section>
 
@@ -234,7 +234,7 @@ export function App() {
         <footer><span><Activity size={13} /> PUBLIC DATA PROTOTYPE</span><p>Built for outside-in validation. No Gauntlet credentials, signing authority, or endorsement implied.</p><span>Schema risk-off-evidence/v1</span></footer>
       </main>
 
-      {containment && <div className="modal-backdrop" onClick={() => setContainment(null)}><section className="modal" onClick={(event) => event.stopPropagation()}><header><div><span className="section-kicker">AOMI EXECUTION ROUTE · HISTORICAL PREVIEW</span><h2>Exact calldata enters the host pipeline.</h2></div><button onClick={() => setContainment(null)}><X /></button></header><div className="route-summary"><code>evm_stage_tx</code><i>→</i><code>simulate_batch</code><i>→</i><code>evm_commit_txs</code><i>→</i><code>verify_execution</code></div><div className="modal-warning"><AlertTriangle size={17} /><p><b>This USD0++ payload is a counterfactual preview, not a live action.</b><br />For a current incident, the authorized manager reviews exact allocations; Aomi stages raw calldata, stops on failed simulation, and the connected allocator wallet must approve commit.</p></div><pre>{JSON.stringify(containment, null, 2)}</pre><div className="modal-actions"><a href="/api/incidents/usd0pp/containment" className="button ghost" target="_blank"><ExternalLink size={14} /> Open preview JSON</a><button className="button primary" onClick={() => void navigator.clipboard.writeText(JSON.stringify(containment, null, 2))}><Copy size={14} /> Copy preview</button></div></section></div>}
+      {containment && <div className="modal-backdrop" onClick={() => setContainment(null)}><section className="modal" onClick={(event) => event.stopPropagation()}><header><div><span className="section-kicker">LIQSTEWARD · HISTORICAL PREVIEW</span><h2>Exact calldata enters the Aomi simulation pipeline.</h2></div><button onClick={() => setContainment(null)}><X /></button></header><div className="route-summary"><code>evm_stage_tx</code><i>→</i><code>simulate_batch</code><i>→</i><code>finalize_simulation</code><i>→</i><code>unsigned Safe JSON</code></div><div className="modal-warning"><AlertTriangle size={17} /><p><b>This USD0++ payload is a counterfactual preview, not a live action.</b><br />For a current incident, the manager reviews exact allocations. LiqSteward stages and simulates the calldata, then produces an unsigned package for the manager-controlled Safe.</p></div><pre>{JSON.stringify(containment, null, 2)}</pre><div className="modal-actions"><a href="/api/incidents/usd0pp/containment" className="button ghost" target="_blank"><ExternalLink size={14} /> Open preview JSON</a><button className="button primary" onClick={() => void navigator.clipboard.writeText(JSON.stringify(containment, null, 2))}><Copy size={14} /> Copy preview</button></div></section></div>}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 {
-  "name": "@risk-off/core",
+  "name": "@liqsteward/core",
   "version": "0.1.0",
   "type": "module",
   "main": "./dist/index.js",

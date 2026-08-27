@@ -10,7 +10,7 @@ import {
   transactionTimeline,
   usd0ppFixture,
   verifyTransaction,
-} from "@risk-off/core";
+} from "@liqsteward/core";
 import { isAddress, isHash, type Hex } from "viem";
 
 type ContainmentEncodingBody = {
@@ -83,7 +83,7 @@ export function buildApp(options: { rpcUrl?: string; webOrigin?: string } = {}) 
 
   app.register(cors, { origin: options.webOrigin ?? true });
 
-  app.get("/api/health", async () => ({ ok: true, service: "risk-off-pilot", version: "0.1.0" }));
+  app.get("/api/health", async () => ({ ok: true, service: "liqsteward", version: "0.2.0" }));
 
   app.get("/api/incidents/usd0pp", async () => ({
     fixture,

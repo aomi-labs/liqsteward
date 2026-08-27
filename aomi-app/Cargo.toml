@@ -1,8 +1,8 @@
 [package]
-name = "risk-off-pilot-app"
-version = "0.1.0"
+name = "liqsteward-app"
+version = "0.2.0"
 edition = "2024"
-description = "Aomi tool surface for independent vault incident assurance"
+description = "Aomi tool surface for LiqSteward vault operations and execution assurance"
 
 [lib]
 crate-type = ["cdylib", "rlib"]

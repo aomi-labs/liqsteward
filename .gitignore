@@ -6,3 +6,5 @@ coverage/
 target/
 *.tsbuildinfo
 apps/web/.vite/
+.vercel
+.env*

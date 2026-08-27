@@ -1,4 +1,4 @@
 [app]
-name = "risk-off-pilot"
-display_name = "Risk-Off Vault Operator"
+name = "liqsteward"
+display_name = "LiqSteward"
 public = true
