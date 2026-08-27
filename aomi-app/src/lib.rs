@@ -121,6 +121,15 @@ mod tests {
                         || schema.get("oneOf").is_some(),
                     "tool `{name}` property `{property}` has no type: {schema}"
                 );
+                // Strict mode forbids open objects: an explicit
+                // `additionalProperties` may only ever be `false`.
+                if let Some(additional) = schema.get("additionalProperties") {
+                    assert_eq!(
+                        additional,
+                        &serde_json::Value::Bool(false),
+                        "tool `{name}` property `{property}` declares an open object"
+                    );
+                }
             }
         }
     }
