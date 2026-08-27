@@ -95,4 +95,33 @@ mod tests {
         let manifest = serde_json::to_value(client::LiqStewardApp.manifest()).unwrap();
         assert_strict_object_schemas(&manifest, "manifest");
     }
+
+    /// Model providers reject any tool-parameter property whose schema lacks a
+    /// `type` key (an untyped node is what `serde_json::Value` derives by
+    /// default). The whole app fails to load when one tool is rejected, so
+    /// pin every declared parameter property to a typed schema.
+    #[test]
+    fn every_tool_parameter_property_is_typed() {
+        let manifest = serde_json::to_value(client::LiqStewardApp.manifest()).unwrap();
+        let tools = manifest["tools"].as_array().expect("manifest tools");
+        for tool in tools {
+            let name = tool["name"].as_str().unwrap_or("?");
+            let Some(properties) = tool
+                .get("parameters")
+                .and_then(|parameters| parameters.get("properties"))
+                .and_then(serde_json::Value::as_object)
+            else {
+                continue;
+            };
+            for (property, schema) in properties {
+                assert!(
+                    schema.get("type").is_some()
+                        || schema.get("$ref").is_some()
+                        || schema.get("anyOf").is_some()
+                        || schema.get("oneOf").is_some(),
+                    "tool `{name}` property `{property}` has no type: {schema}"
+                );
+            }
+        }
+    }
 }

@@ -131,6 +131,18 @@ pub(crate) struct SimulatePlanArgs {
     pub(crate) manager_selected: bool,
 }
 
+/// `serde_json::Value` derives an unconstrained (empty) schema, which model
+/// providers reject: every tool-parameter schema node must carry a `type`.
+/// The simulation result is host-injected opaque JSON, so declare it as an
+/// open object rather than leaving the node untyped.
+fn host_injected_object(_generator: &mut SchemaGenerator) -> Schema {
+    json_schema!({
+        "type": "object",
+        "properties": {},
+        "additionalProperties": true
+    })
+}
+
 #[derive(Debug, Deserialize, JsonSchema)]
 pub(crate) struct FinalizeSimulationArgs {
     /// Stable plan identifier.
@@ -148,6 +160,7 @@ pub(crate) struct FinalizeSimulationArgs {
     /// Declared maximum residual exposure.
     pub(crate) max_residual_assets: String,
     /// Full host simulate_batch result injected by the routed runtime.
+    #[schemars(schema_with = "host_injected_object")]
     pub(crate) simulation_result: Value,
 }
 
