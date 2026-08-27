@@ -80,7 +80,7 @@ function NativeOperator({ onError }: NativeOperatorProps) {
     <div className="native-console-grid">
       <section className="native-widget-shell" aria-label="LiqSteward operator session">
         <AomiFrame.Header
-          showSidebarTrigger={false}
+          showSidebarTrigger
           withControl
           controlBarProps={{
             hideApiKey: true,
@@ -185,9 +185,11 @@ export function ControlRoom() {
           backendUrl={config.runtimeUrl}
           applicationId={applicationId}
           className="dark liqsteward-widget"
-          height="690px"
-          showSidebar={false}
+          height="clamp(430px, calc(100dvh - 280px), 820px)"
+          showSidebar
+          defaultSidebarOpen
           walletPosition={null}
+          products={null}
           persistThread
           threadPersistenceScope="liqsteward-native-control-room"
         >
