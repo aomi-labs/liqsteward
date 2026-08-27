@@ -1317,18 +1317,43 @@ impl DynAomiTool for FinalizeSimulation {
             return Err(format!("fork simulation did not pass: {simulation}"));
         }
         let calldata = encode_reallocate(&args.allocations)?;
-        let simulated_to = simulation
-            .pointer("/simulation/steps/0/tx/to")
+        // The host may batch mandatory fee calls alongside the staged
+        // transaction, so the reallocate is not necessarily step 0. Identify
+        // it by target vault — exactly one such step may exist — and hold
+        // that step to byte-identity with the reviewed plan's encoding.
+        let steps = simulation
+            .pointer("/simulation/steps")
+            .and_then(Value::as_array)
+            .ok_or_else(|| "simulation result carried no step list".to_owned())?;
+        let vault_steps = steps
+            .iter()
+            .filter(|step| {
+                step.pointer("/tx/to")
+                    .and_then(Value::as_str)
+                    .is_some_and(|to| to.eq_ignore_ascii_case(&args.vault))
+            })
+            .collect::<Vec<_>>();
+        let [vault_step] = vault_steps.as_slice() else {
+            return Err(format!(
+                "expected exactly one simulated call to the vault, found {}",
+                vault_steps.len()
+            ));
+        };
+        let simulated_data = vault_step
+            .pointer("/tx/data")
             .and_then(Value::as_str)
             .unwrap_or_default();
-        let simulated_data = simulation
-            .pointer("/simulation/steps/0/tx/data")
-            .and_then(Value::as_str)
-            .unwrap_or_default();
-        if !simulated_to.eq_ignore_ascii_case(&args.vault)
-            || !simulated_data.eq_ignore_ascii_case(&calldata)
-        {
-            return Err("simulation target or calldata did not match the reviewed plan".to_owned());
+        if !simulated_data.eq_ignore_ascii_case(&calldata) {
+            return Err(format!(
+                "simulated vault calldata did not match the reviewed plan: simulated {} bytes with selector {}, reviewed plan encodes {} bytes with selector {}",
+                simulated_data.len().saturating_sub(2) / 2,
+                simulated_data.get(..10).unwrap_or_default(),
+                calldata.len().saturating_sub(2) / 2,
+                calldata.get(..10).unwrap_or_default(),
+            ));
+        }
+        if vault_step.pointer("/success").and_then(Value::as_bool) != Some(true) {
+            return Err("the simulated vault call did not succeed".to_owned());
         }
         let before_after = args
             .allocations
@@ -1539,6 +1564,49 @@ mod tests {
             max_residual_assets: "0".to_owned(),
             manager_selected: true,
         }
+    }
+
+    /// Finalize must locate the vault call anywhere in the simulated batch —
+    /// the host may prepend fee calls — and hold it to byte-identity.
+    #[test]
+    fn finalize_accepts_vault_step_behind_fee_step_and_rejects_mismatch() {
+        let route = route_args();
+        let calldata = encode_reallocate(&route.allocations).unwrap();
+        let simulation = |data: &str| {
+            json!({
+                "simulation": {
+                    "batch_success": true,
+                    "steps": [
+                        {"step": 0, "success": true, "tx": {"to": "0x000000000000000000000000000000000000fee5", "data": "0x"}},
+                        {"step": 1, "success": true, "tx": {"to": PILOT_VAULT, "data": data}},
+                    ],
+                },
+                "simulation_from": "0x0000000000000000000000000000000000000001",
+            })
+        };
+        let finalize = |simulation_result: Value| {
+            FinalizeSimulation::run(
+                &crate::client::LiqStewardApp,
+                FinalizeSimulationArgs {
+                    plan_id: route.plan_id.clone(),
+                    risk_signal_id: route.risk_signal_id.clone(),
+                    chain_id: route.chain_id,
+                    vault: route.vault.clone(),
+                    allocations: route.allocations.clone(),
+                    risk_market_ids: route.risk_market_ids.clone(),
+                    max_residual_assets: route.max_residual_assets.clone(),
+                    simulation_result,
+                },
+                aomi_sdk::testing::TestCtxBuilder::new(FinalizeSimulation::NAME).build(),
+            )
+        };
+
+        let package = finalize(simulation(&calldata)).unwrap();
+        assert_eq!(package["status"], "unsigned_safe_proposal_ready");
+        assert_eq!(package["transaction"]["data"], json!(calldata));
+
+        let mismatch = finalize(simulation("0x7299aa31deadbeef")).unwrap_err();
+        assert!(mismatch.contains("did not match the reviewed plan"), "{mismatch}");
     }
 
     #[test]
