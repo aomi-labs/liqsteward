@@ -102,6 +102,7 @@ export function PolicyPanel({ vault }: { vault: string }) {
 
       <section className="nav-block">
         <span className="section-kicker">Upload policy</span>
+        <p className="nav-dim">Policy updates require authorized service access. Browser uploads are disabled until manager authentication is connected.</p>
         <textarea
           className="nav-textarea"
           value={draft}
@@ -109,10 +110,10 @@ export function PolicyPanel({ vault }: { vault: string }) {
           placeholder={'{ "schema": "nav-policy/v1", "policy_id": "…", "version": 1, … }'}
           spellCheck={false}
           rows={10}
-          disabled={busy}
+          disabled
         />
         <div className="nav-upload-row">
-          <button type="button" className="button primary" onClick={() => void upload()} disabled={busy || draft.trim().length === 0}>
+          <button type="button" className="button primary" onClick={() => void upload()} disabled>
             {busy ? <LoaderCircle size={13} className="spin" /> : null} Validate & upload
           </button>
           {result && <span className="nav-upload-ok">stored <code>{result.policy_id}</code> v{result.version} · <span className="mono">{short(result.digest, 10, 8)}</span></span>}

@@ -49,14 +49,15 @@ function BreakCard({ item, onUpdated, onSelectNode }: { item: Break; onUpdated: 
         {last && <span className="nav-dim">{last.changed_by} · {formatTime(last.at)}{last.note ? ` · ${last.note}` : ""}</span>}
       </div>
       <form className="nav-break-form" onSubmit={(event) => { event.preventDefault(); void submit(); }}>
-        <select value={status} onChange={(event) => setStatus(event.target.value as Break["status"])} disabled={busy}>
+        <select value={status} onChange={(event) => setStatus(event.target.value as Break["status"])} disabled>
           <option value="open">open</option>
           <option value="explained">explained</option>
           <option value="resolved">resolved</option>
         </select>
-        <input value={note} onChange={(event) => setNote(event.target.value)} placeholder="note" disabled={busy} />
-        <button type="submit" className="button" disabled={busy}>{busy ? <LoaderCircle size={12} className="spin" /> : "Update"}</button>
+        <input value={note} onChange={(event) => setNote(event.target.value)} placeholder="note" disabled />
+        <button type="submit" className="button" disabled>{busy ? <LoaderCircle size={12} className="spin" /> : "Update"}</button>
       </form>
+      <p className="nav-dim">Break updates require authorized service access; this browser view is read-only.</p>
       {error && <div className="nav-inline-error">{error}</div>}
     </li>
   );

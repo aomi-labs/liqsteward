@@ -101,7 +101,7 @@ export function registerNav(app: FastifyInstance, options: NavRouteOptions) {
     };
   });
 
-  app.post<{ Body: Record<string, unknown> }>("/api/nav/policies", async (request, reply) => {
+  app.post<{ Body: Record<string, unknown> }>("/api/nav/policies", { preHandler: requireService }, async (request, reply) => {
     const parsed = validatePolicy(request.body);
     if (!parsed.ok) return reply.code(400).send({ error: parsed.error });
     const policy = parsed.policy;
@@ -445,9 +445,13 @@ export function registerNav(app: FastifyInstance, options: NavRouteOptions) {
 
   // ── breaks ──
 
-  app.patch<{ Params: { id: string }; Body: { status: "open" | "explained" | "resolved"; note?: string; changed_by?: string } }>("/api/nav/breaks/:id", async (request, reply) => {
+  app.patch<{ Params: { id: string }; Body: { status: "open" | "explained" | "resolved"; note?: string; changed_by?: string } }>("/api/nav/breaks/:id", { preHandler: requireService }, async (request, reply) => {
     const item = await store.breakById(request.params.id);
     if (!item) return reply.code(404).send({ error: "break not found" });
+    const dag = await store.dag(item.dag_id);
+    if (!dag || dag.aomi_session_id !== (request as PluginRequest).aomiSession) {
+      return reply.code(403).send({ error: "break belongs to another session" });
+    }
     const body = request.body;
     if (!body || !["open", "explained", "resolved"].includes(body.status)) return reply.code(400).send({ error: "status must be open, explained, or resolved" });
     const updated = {
