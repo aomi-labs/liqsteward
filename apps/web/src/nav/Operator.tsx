@@ -1,6 +1,7 @@
 import { AomiFrame } from "@aomi-labs/widget-lib";
 import { useAomiRuntime } from "@aomi-labs/react";
 import { ArrowUpRight, TerminalSquare } from "lucide-react";
+import { useMemo } from "react";
 import type { ConsoleConfig } from "../nav-types";
 
 type QuickAction = { label: string; message: string; needsDag: boolean };
@@ -79,6 +80,17 @@ export function Operator({ config, vault, dagId, onError }: {
   onError: (error: string | null) => void;
 }) {
   const applicationId = config?.appStatus.applicationId ?? null;
+  const clientOptions = useMemo(() => ({
+    fetch: (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = new URL(input instanceof Request ? input.url : String(input), window.location.origin);
+      if (config && url.origin === new URL(config.runtimeUrl).origin && url.pathname.startsWith("/v1/agent/")) {
+        const headers = new Headers(init?.headers);
+        headers.set("x-steward-origin", window.location.origin);
+        return fetch(`/api/aomi/nav-oracle${url.pathname}${url.search}`, { ...init, headers, credentials: "omit" });
+      }
+      return fetch(input, init);
+    },
+  }), [config?.runtimeUrl]);
   if (!config || applicationId === null) {
     return (
       <div className="native-widget-loading nav-widget-loading">
@@ -91,6 +103,7 @@ export function Operator({ config, vault, dagId, onError }: {
     <AomiFrame.Root
       backendUrl={config.runtimeUrl}
       applicationId={applicationId}
+      clientOptions={clientOptions}
       className="dark liqsteward-widget nav-widget"
       height="100%"
       showSidebar

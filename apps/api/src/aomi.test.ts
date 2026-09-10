@@ -35,11 +35,53 @@ describe("Aomi console discovery", () => {
   it("does not relay legacy chat, account, or secret requests", async () => {
     const fetchImpl = vi.fn(async () => new Response("{}"));
     const app = buildApp({ aomi: { fetchImpl } });
-    for (const path of ["api/thread/chat", "api/account/payment/byok", "api/thread/secrets", "v1/agent/chat"]) {
+    for (const path of ["api/thread/chat", "api/account/payment/byok", "api/thread/secrets", "v1/agent/chat/id/actions/id/result"]) {
       const response = await app.inject({ method: "POST", url: `/api/aomi/nav-oracle/${path}` });
       expect(response.statusCode).toBe(404);
     }
     expect(fetchImpl).not.toHaveBeenCalled();
+    await app.close();
+  });
+
+  it("requires a visitor bearer and matching embedding origin before relaying", async () => {
+    const fetchImpl = vi.fn(async () => new Response("{}"));
+    const app = buildApp({ aomi: { fetchImpl } });
+    const url = "/api/aomi/nav-oracle/v1/agent/chat";
+    expect((await app.inject({ method: "POST", url, payload: {} })).statusCode).toBe(401);
+    expect((await app.inject({ method: "POST", url, payload: {}, headers: {
+      authorization: "Bearer visitor-test", "x-steward-origin": "https://foreign.test",
+    } })).statusCode).toBe(403);
+    expect(fetchImpl).not.toHaveBeenCalled();
+    await app.close();
+  });
+
+  it("relays only visitor credentials and pins turns to the deployed app", async () => {
+    const calls: Array<{ url: string; init?: RequestInit }> = [];
+    const fetchImpl = async (input: RequestInfo | URL, init?: RequestInit) => {
+      calls.push({ url: String(input), init });
+      return new Response(JSON.stringify(String(input).endsWith("/api/thread/apps")
+        ? [{ name: "nav-oracle", application_id: 9 }]
+        : { events: [] }), { headers: { "content-type": "application/json", "set-cookie": "do-not-forward" } });
+    };
+    const app = buildApp({ aomi: { backendUrl: BACKEND, portalUrl: PORTAL, fetchImpl } });
+    const response = await app.inject({ method: "POST", url: "/api/aomi/nav-oracle/v1/agent/chat?application_id=777", payload: {
+      sessionId: "thread-1", message: "Value the vault", applicationId: 777, app: "other", mode: "auto",
+    }, headers: {
+      host: "steward.test", origin: "https://steward.test", "x-steward-origin": "https://steward.test",
+      authorization: "Bearer visitor-test", cookie: "private-cookie", "idempotency-key": "test-turn",
+    } });
+    expect(response.statusCode).toBe(200);
+    const call = calls.at(-1)!;
+    expect(call.url).toBe(`${PORTAL}/v1/agent/chat`);
+    expect(JSON.parse(call.init!.body as string)).toMatchObject({ applicationId: 9, app: "nav-oracle", mode: "direct" });
+    const headers = new Headers(call.init!.headers);
+    expect(headers.get("authorization")).toBe("Bearer visitor-test");
+    expect(headers.get("origin")).toBe("https://steward.test");
+    expect(headers.get("cookie")).toBeNull();
+    expect(headers.get("x-steward-origin")).toBeNull();
+    expect(headers.get("idempotency-key")).toBe("test-turn");
+    expect(response.headers["set-cookie"]).toBeUndefined();
+    expect(call.init!.redirect).toBe("manual");
     await app.close();
   });
 });

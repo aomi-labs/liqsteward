@@ -82,11 +82,12 @@ End to end with a model: build `aomi-cli` from `product-mono` main, copy `aomi-a
 
 ### Control room ↔ deployed Aomi app
 
-The NAV console embeds Aomi's native widget for Markdown, thread persistence, and tool-call traces. It fixes the Agent target to `nav-oracle` and the exact deployed application ID returned by discovery. The widget connects to the matching Aomi portal's public `/v1/agent` API using its supported origin-bound guest session flow. The obsolete `/api/thread/chat` relay is removed.
+The NAV console embeds Aomi's native widget for Markdown, thread persistence, and tool-call traces. The widget obtains an origin-bound guest session directly from the matching Aomi portal. Its `/v1/agent` requests use a narrow same-origin relay because the portal's Agent routes currently lack cross-origin response headers. The relay preserves the visitor bearer and validated embedding origin, pins each turn to the exact deployed app ID, and leaves authentication to Aomi. The obsolete `/api/thread/chat` relay is removed.
 
 | Endpoint | Purpose |
 | --- | --- |
 | `GET /api/console/config` | App name, backend, and live deployment status |
+| `/api/aomi/:app/v1/agent/*` | Visitor-authenticated turns, polling, interrupts and session lifecycle; no action submission or signing routes |
 
 Guest credentials are issued by Aomi for the visitor, not shared by Steward. `LIQSTEWARD_SERVICE_TOKEN` authenticates agent-to-NAV-storage calls only and is never sent to the widget. No wallet is connected or signing authority granted by opening the valuation console. NAV policy and break-management writes remain service-authenticated; browser management controls are read-only pending manager authentication.
 

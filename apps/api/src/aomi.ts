@@ -5,8 +5,8 @@ import { randomUUID } from "node:crypto";
  * Operator-console BFF for the LiqSteward Aomi apps.
  *
  * Reports deployment status. The widget uses the Aomi portal's public Agent
- * API and origin-bound guest authentication directly, not a legacy thread
- * relay or Steward's privileged NAV service token.
+ * API with origin-bound guest authentication. A narrow Agent relay preserves
+ * the visitor's credential; it never uses Steward's NAV service token.
  */
 
 export type AomiConsoleOptions = {
@@ -105,4 +105,57 @@ export function registerAomiConsole(app: FastifyInstance, options: AomiConsoleOp
     };
   });
 
+  // The public portal currently has no CORS handler on /v1/agent. Authentication
+  // still happens there: forward the visitor's bearer and actual embedding
+  // origin, never cookies, service credentials, or signing/payment endpoints.
+  app.all<{ Params: { app: string; "*": string } }>("/api/aomi/:app/v1/agent/*", async (request, reply) => {
+    const appName = resolveApp(request.params.app);
+    if (!appName) return reply.code(404).send({ error: "unknown Aomi app" });
+    const path = `/v1/agent/${request.params["*"]}`;
+    const allowed = request.method === "GET"
+      ? /^\/v1\/agent\/(chat\/[a-zA-Z0-9_-]+|sessions(?:\/[a-zA-Z0-9_-]+)?)$/.test(path)
+      : request.method === "POST"
+        ? /^\/v1\/agent\/chat(?:\/[a-zA-Z0-9_-]+\/interrupt)?$/.test(path)
+        : ["PATCH", "DELETE"].includes(request.method) && /^\/v1\/agent\/sessions\/[a-zA-Z0-9_-]+$/.test(path);
+    if (!allowed) return reply.code(404).send({ error: "unsupported Agent route" });
+    const bearer = request.headers.authorization;
+    if (!bearer?.startsWith("Bearer ")) return reply.code(401).send({ error: "visitor authentication required" });
+    const origin = request.headers["x-steward-origin"];
+    try {
+      const parsed = new URL(String(origin));
+      const local = ["localhost", "127.0.0.1", "[::1]"].includes(parsed.hostname);
+      if (parsed.origin !== origin || parsed.host !== request.headers.host
+        || (parsed.protocol !== "https:" && !(local && parsed.protocol === "http:"))
+        || (request.headers.origin && request.headers.origin !== origin)) throw new Error("invalid origin");
+    } catch {
+      return reply.code(403).send({ error: "same-origin Agent request required" });
+    }
+    const headers = new Headers({ authorization: bearer, origin: String(origin) });
+    for (const name of ["accept", "content-type", "idempotency-key", "x-session-id", "x-thread-id", "x-aomi-inference-funding"]) {
+      const value = request.headers[name];
+      if (typeof value === "string") headers.set(name, value);
+    }
+    let body = request.body;
+    if (request.method === "POST" && path === "/v1/agent/chat") {
+      if (!body || typeof body !== "object" || Array.isArray(body)) return reply.code(400).send({ error: "Agent turn must be an object" });
+      const status = await refreshAppStatus(appName);
+      if (!status.applicationId) return reply.code(503).send({ error: "application identity unavailable" });
+      body = { ...body, mode: "direct", app: appName, applicationId: status.applicationId };
+    }
+    const upstream = new URL(`${portalUrl}${path}`);
+    const query = new URL(request.url, "http://local.invalid").searchParams;
+    for (const name of ["cursor", "wait", "limit"]) {
+      if (request.method === "GET" && query.has(name)) upstream.searchParams.set(name, query.get(name)!);
+    }
+    const response = await fetchImpl(upstream, {
+      method: request.method, headers, redirect: "manual", signal: AbortSignal.timeout(45_000),
+      body: request.method === "GET" || body === undefined ? undefined : JSON.stringify(body),
+    });
+    reply.code(response.status).header("cache-control", "no-store");
+    for (const name of ["content-type", "x-request-id", "retry-after"]) {
+      const value = response.headers.get(name);
+      if (value) reply.header(name, value);
+    }
+    return reply.send(await response.text());
+  });
 }
