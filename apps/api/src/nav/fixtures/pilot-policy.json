@@ -1,0 +1,52 @@
+{
+  "schema": "liqsteward/nav-policy/v1",
+  "policy_id": "gauntlet-usdc-core-pilot",
+  "uploaded_by": "liqsteward-fixture",
+  "scope": {
+    "chain_id": 1,
+    "owned_accounts": ["0x8eb67a509616cd6a7c1b3c8c21d48ff57df3d458"],
+    "boundary": [
+      { "include": "every Morpho Blue supply position in the vault's withdraw queue" },
+      { "include": "idle balance of the base asset held by the vault contract" }
+    ],
+    "max_block_age_s": 3600,
+    "archive_required": true
+  },
+  "adapters": [
+    { "id": "metamorpho_vault", "version": "1.0.0", "contract": "0x8eb67a509616cd6a7c1b3c8c21d48ff57df3d458" },
+    { "id": "morpho_blue_market", "version": "1.0.0", "contract": "0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb" },
+    { "id": "erc20_balance", "version": "1.0.0" },
+    { "id": "erc4626_generic", "version": "1.0.0" }
+  ],
+  "pricing": {
+    "USDC": { "source": "policy:par", "max_staleness_s": 0, "max_deviation_bps": 0, "haircut_bps": 0 }
+  },
+  "liabilities": [],
+  "manual_valuations": [],
+  "exclusions": [],
+  "reconciliation": [
+    {
+      "id": "vault_total_assets",
+      "scope": "vault",
+      "posted_view": "metamorpho.total_assets",
+      "tolerance_bps": 5,
+      "severity": "critical"
+    },
+    {
+      "id": "vault_last_total_assets",
+      "scope": "vault",
+      "posted_view": "metamorpho.last_total_assets",
+      "tolerance_bps": 50,
+      "severity": "info"
+    },
+    {
+      "id": "market_shares",
+      "scope": "per_node",
+      "kind_filter": "lending_supply",
+      "posted_view": "morpho_market.shares_to_assets",
+      "tolerance_bps": 0,
+      "severity": "warn"
+    }
+  ],
+  "tolerances": { "total_assets_conservation_bps": 0 }
+}

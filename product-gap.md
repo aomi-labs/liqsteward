@@ -65,6 +65,12 @@ flowchart LR
 
 Reading Ethereum mainnet after the simulation cannot close the gap. Mainnet still contains the pre-transaction allocations because the proposed transaction was never broadcast. The post-state must be read **before the same simulation session is released**.
 
+### A second, adjacent gap: routed results transit the model as text
+
+Live drills (2026-08-28) exposed a transport gap in the same pipeline. Every routed continuation — including the `simulate_batch` result bound into `finalize_simulation` — is rendered as a prompt and re-emitted by the model. The ~450-byte simulated calldata hex arrived re-typed in three out of three runs (441/453/461 bytes for the same staged record, which executed with identical gas each time), so the app cannot enforce byte-identity between the simulated record and the reviewed plan from its side of the model boundary.
+
+The app now verifies the transport-stable facts (passing batch, unique successful vault-targeted step, reallocate selector) and records whether the reported hex survived verbatim. Restoring a hard byte-identity gate needs one of two host capabilities: a per-step `data_keccak` digest in `simulate_batch` results (66 hex characters survive model transport), or host-side injection of awaited bindings at dispatch time. Both belong to the same assurance-receipt work this document proposes.
+
 ## Why a successful transaction can still fail the policy
 
 Assume a risk policy requires both affected USD0++ markets to reach zero exposure and all recoverable USDC to move to the canonical idle market.

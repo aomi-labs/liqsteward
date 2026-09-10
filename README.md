@@ -52,10 +52,33 @@ curl -sS \
 Build the Aomi app:
 
 ```bash
-cargo check --manifest-path aomi-app/Cargo.toml
+cargo test --manifest-path aomi-app/Cargo.toml --workspace
 ```
 
 The hosted Aomi app performs its own public RPC and Morpho reads; the local API URL is only for the standalone dashboard.
+
+### NAV oracle
+
+The `nav-oracle` app (design: [docs/prd/nav-oracle.md](docs/prd/nav-oracle.md)) needs the API to have a Postgres store and a service token:
+
+```bash
+DATABASE_URL=postgresql://localhost:5432/liqsteward \
+LIQSTEWARD_SERVICE_TOKEN=dev-token \
+ETHEREUM_RPC_URL=https://eth.drpc.org \
+npm run dev
+```
+
+Migrations run at boot from `apps/api/drizzle/`, and the pilot accounting policy (`apps/api/src/nav/fixtures/pilot-policy.json`) is seeded idempotently. The Aomi app reads the same two values as its secrets, `LIQSTEWARD_BFF_URL` and `LIQSTEWARD_BFF_TOKEN`.
+
+End to end without a model, playing the host against a real pinned block (needs the API above and a mainnet RPC that serves recent historical `eth_call`s):
+
+```bash
+LIQSTEWARD_BFF_URL=http://127.0.0.1:4310 LIQSTEWARD_BFF_TOKEN=dev-token \
+NAV_E2E_RPC=https://eth.drpc.org \
+cargo test --manifest-path aomi-app/Cargo.toml -p nav-oracle --test e2e_pinned -- --ignored --nocapture
+```
+
+End to end with a model: build `aomi-cli` from `product-mono` main, copy `aomi-app/target/debug/libnav_oracle.dylib` to a directory as `nav_oracle.dylib`, and run `aomi-cli --app nav-oracle --show-tool chat "..."` with `AOMI_APPS_DIR` pointing at that directory and the two secrets exported as environment variables.
 
 ### Control room ↔ deployed Aomi app
 

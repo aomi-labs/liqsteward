@@ -1,0 +1,16 @@
+[package]
+name = "liqsteward-core"
+version = "0.1.0"
+edition = "2024"
+description = "Shared building blocks for LiqSteward Aomi apps: BFF client, transport digests, ABI decoders, Morpho constants"
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies]
+aomi-sdk.workspace = true
+alloy-primitives.workspace = true
+alloy-sol-types.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true

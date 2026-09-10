@@ -1,0 +1,17 @@
+[package]
+name = "liqsteward-app"
+version = "0.3.0"
+edition = "2024"
+description = "Aomi tool surface for LiqSteward vault operations and execution assurance (sunsetting; superseded by nav-oracle)"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+aomi-sdk.workspace = true
+alloy-primitives.workspace = true
+alloy-sol-types.workspace = true
+reqwest.workspace = true
+schemars.workspace = true
+serde.workspace = true
+serde_json.workspace = true

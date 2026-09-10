@@ -17,8 +17,11 @@ import {
   TerminalSquare,
   X,
 } from "lucide-react";
+import { AomiMark } from "@aomi-labs/widget-lib";
 import { useEffect, useMemo, useState } from "react";
-import { ControlRoom } from "./ControlRoom";
+import { NavOracle } from "./NavOracle";
+import { Landing } from "./Landing";
+import { viewForLocation } from "./routes";
 
 type Tx = {
   hash: string;
@@ -106,7 +109,7 @@ function TransactionRow({ tx, active, onSelect }: { tx: Tx; active: boolean; onS
 }
 
 export function App() {
-  const [view, setView] = useState<"control" | "replay">("control");
+  const view = viewForLocation(window.location.pathname, window.location.search);
   const [data, setData] = useState<Replay | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [activeHash, setActiveHash] = useState<string | null>(null);
@@ -116,11 +119,12 @@ export function App() {
   const [containment, setContainment] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
+    if (view !== "replay") return;
     fetch("/api/incidents/usd0pp")
       .then((response) => { if (!response.ok) throw new Error(`API returned ${response.status}`); return response.json(); })
       .then((replay: Replay) => { setData(replay); setActiveHash(replay.timeline[0]?.hash ?? null); setVerifyHash(replay.timeline[2]?.hash ?? ""); })
       .catch((reason: Error) => setError(reason.message));
-  }, []);
+  }, [view]);
 
   async function verify() {
     setVerifying(true);
@@ -135,6 +139,8 @@ export function App() {
     setContainment(await response.json());
   }
 
+  if (view === "landing") return <Landing />;
+
   const replayBody = error
     ? <div className="loading inline"><AlertTriangle /><h1>Replay unavailable</h1><p>{error}</p></div>
     : !data
@@ -144,10 +150,11 @@ export function App() {
   return (
     <div className="shell">
       <header className="topbar">
-        <div className="brand"><span className="brand-mark"><ShieldCheck size={20} /></span><span>LIQSTEWARD</span><i>VAULT CONTROL</i></div>
+        <div className="brand"><span className="brand-mark"><AomiMark size={18} /></span><span>LIQSTEWARD</span><i>BY AOMI LABS</i></div>
         <nav>
-          <button className={`nav-tab ${view === "control" ? "active" : ""}`} onClick={() => setView("control")}>Control room</button>
-          <button className={`nav-tab ${view === "replay" ? "active" : ""}`} onClick={() => setView("replay")}>Replay <b>USD0++ / 2025-01</b></button>
+          <a className="nav-tab" href="/">Overview</a>
+          <a className={`nav-tab ${view === "nav" ? "active" : ""}`} href="/app/nav-oracle" aria-current={view === "nav" ? "page" : undefined}>NAV oracle</a>
+          <a className={`nav-tab ${view === "replay" ? "active" : ""}`} href="/app/replay" aria-current={view === "replay" ? "page" : undefined}>Replay <b>USD0++ / 2025-01</b></a>
           <span className="live"><i /> ETHEREUM LIVE</span>
         </nav>
         <div className="top-actions">
@@ -157,7 +164,7 @@ export function App() {
       </header>
 
       <main>
-        {view === "control" && <ControlRoom />}
+        {view === "nav" && <NavOracle />}
         {view === "replay" && replayBody}
         {view === "replay" && data && <ReplayView
           data={data}

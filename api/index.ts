@@ -9,7 +9,11 @@ type VercelResponse = unknown;
 
 const app = buildApp({
   rpcUrl: process.env.ETHEREUM_RPC_URL,
-  webOrigin: "https://liqsteward.app",
+  webOrigin: process.env.WEB_ORIGIN ?? "https://liqsteward.app",
+  nav: {
+    databaseUrl: process.env.DATABASE_URL,
+    serviceToken: process.env.LIQSTEWARD_SERVICE_TOKEN,
+  },
 });
 const ready = app.ready();
 

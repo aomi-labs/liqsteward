@@ -4,8 +4,21 @@
     {
       "name": "liqsteward",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "port": 4311
+    },
+    {
+      "name": "liqsteward-nav",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "DATABASE_URL=postgresql://localhost:5432/liqsteward LIQSTEWARD_SERVICE_TOKEN=dev-token ETHEREUM_RPC_URL=https://eth.drpc.org AOMI_APPS=nav-oracle,liqsteward PORT=4320 npx concurrently -n api,web -c cyan,magenta \"npm run dev -w @liqsteward/api\" \"API_PROXY=http://127.0.0.1:4320 npx vite --port 4321 --config apps/web/vite.config.ts apps/web\""
+      ],
+      "port": 4321,
+      "autoPort": false
     }
   ]
 }

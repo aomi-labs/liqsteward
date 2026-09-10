@@ -27,25 +27,33 @@ function stubbedAomi(responses: Record<string, { status?: number; body: unknown 
   return { calls, fetchImpl };
 }
 
+const APPS = ["nav-oracle", "liqsteward"];
+
 describe("Aomi console BFF", () => {
-  it("reports the deployed app status in config", async () => {
+  it("reports each app's deployed status under its own prefix", async () => {
     const { fetchImpl } = stubbedAomi({
       "/api/thread/apps": {
         body: [
-          { name: "other" },
           { name: "liqsteward", application_id: 7, is_active: true, artifact_ready: true },
+          { name: "nav-oracle", application_id: 9, is_active: true, artifact_ready: false },
         ],
       },
     });
-    const app = buildApp({ aomi: { backendUrl: BACKEND, app: "liqsteward", fetchImpl } });
-    const response = await app.inject({ method: "GET", url: "/api/console/config" });
-    expect(response.statusCode).toBe(200);
-    expect(response.json()).toEqual({
-      app: "liqsteward",
+    const app = buildApp({ aomi: { backendUrl: BACKEND, apps: APPS, fetchImpl } });
+    const nav = await app.inject({ method: "GET", url: "/api/console/config?app=nav-oracle" });
+    expect(nav.statusCode).toBe(200);
+    expect(nav.json()).toEqual({
+      app: "nav-oracle",
+      apps: APPS,
       backendUrl: BACKEND,
-      runtimeUrl: "/api/aomi",
-      appStatus: { reachable: true, deployed: true, active: true, artifactReady: true, applicationId: 7 },
+      runtimeUrl: "/api/aomi/nav-oracle",
+      appStatus: { reachable: true, deployed: true, active: true, artifactReady: false, applicationId: 9 },
     });
+    const legacy = await app.inject({ method: "GET", url: "/api/console/config?app=liqsteward" });
+    expect(legacy.json().runtimeUrl).toBe("/api/aomi/liqsteward");
+    expect(legacy.json().appStatus.applicationId).toBe(7);
+    const unknown = await app.inject({ method: "GET", url: "/api/console/config?app=other" });
+    expect(unknown.statusCode).toBe(404);
     await app.close();
   });
 
@@ -53,26 +61,26 @@ describe("Aomi console BFF", () => {
     const { fetchImpl } = stubbedAomi({
       "/api/thread/apps": { status: 503, body: { error: "backend unavailable" } },
     });
-    const app = buildApp({ aomi: { backendUrl: BACKEND, fetchImpl } });
-    const response = await app.inject({ method: "POST", url: "/api/aomi/api/threads" });
+    const app = buildApp({ aomi: { backendUrl: BACKEND, apps: APPS, fetchImpl } });
+    const response = await app.inject({ method: "POST", url: "/api/aomi/nav-oracle/api/threads" });
     expect(response.statusCode).toBe(503);
-    expect(response.json()).toEqual({ error: "LiqSteward application identity is unavailable" });
+    expect(response.json()).toEqual({ error: "nav-oracle application identity is unavailable" });
     await app.close();
   });
 
-  it("proxies the native widget runtime on the same origin", async () => {
+  it("proxies the native widget runtime on the same origin, scoped to the prefixed app", async () => {
     const { calls, fetchImpl } = stubbedAomi({
-      "/api/thread/apps": { body: [{ name: "liqsteward", application_id: 7 }] },
+      "/api/thread/apps": { body: [{ name: "liqsteward", application_id: 7 }, { name: "nav-oracle", application_id: 9 }] },
       "/api/threads": { body: { thread_id: "thread-1", title: "New Chat" } },
       "/api/exec/simulate": { body: { success: true } },
     });
-    const app = buildApp({ aomi: { backendUrl: BACKEND, fetchImpl } });
-    await app.inject({ method: "GET", url: "/api/console/config" });
+    const app = buildApp({ aomi: { backendUrl: BACKEND, apps: APPS, fetchImpl } });
+    await app.inject({ method: "GET", url: "/api/console/config?app=nav-oracle" });
     calls.length = 0;
 
     const apps = await app.inject({
       method: "GET",
-      url: "/api/aomi/api/thread/apps?platform=community",
+      url: "/api/aomi/nav-oracle/api/thread/apps?platform=community",
       headers: {
         "x-session-id": "session-1",
         "x-thread-id": "thread-1",
@@ -81,7 +89,6 @@ describe("Aomi console BFF", () => {
       },
     });
     expect(apps.statusCode).toBe(200);
-    expect(apps.json()[0].name).toBe("liqsteward");
     expect(calls[0]?.url).toBe(`${BACKEND}/api/thread/apps?platform=community`);
     expect(calls[0]?.headers).toMatchObject({
       "x-session-id": "session-1",
@@ -92,18 +99,18 @@ describe("Aomi console BFF", () => {
 
     const thread = await app.inject({
       method: "POST",
-      url: "/api/aomi/api/threads?app=default&application_id=1",
+      url: "/api/aomi/nav-oracle/api/threads?app=default&application_id=1",
       headers: { "x-session-id": "thread-1", "x-thread-id": "thread-1" },
     });
     expect(thread.statusCode).toBe(200);
     const threadUrl = new URL(calls[1]!.url);
     expect(threadUrl.pathname).toBe("/api/threads");
-    expect(threadUrl.searchParams.get("app")).toBe("liqsteward");
-    expect(threadUrl.searchParams.get("application_id")).toBe("7");
+    expect(threadUrl.searchParams.get("app")).toBe("nav-oracle");
+    expect(threadUrl.searchParams.get("application_id")).toBe("9");
 
     const simulation = await app.inject({
       method: "POST",
-      url: "/api/aomi/api/exec/simulate",
+      url: "/api/aomi/liqsteward/api/exec/simulate",
       headers: { "content-type": "application/json", "x-session-id": "session-1" },
       payload: { transactions: [{ to: "0x1234" }] },
     });
@@ -112,13 +119,15 @@ describe("Aomi console BFF", () => {
     await app.close();
   });
 
-  it("rejects paths outside the native widget runtime surface", async () => {
+  it("rejects paths outside the native widget runtime surface and unknown apps", async () => {
     const { calls, fetchImpl } = stubbedAomi({});
-    const app = buildApp({ aomi: { backendUrl: BACKEND, fetchImpl } });
-    const account = await app.inject({ method: "GET", url: "/api/aomi/api/account/payment/byok" });
-    const secret = await app.inject({ method: "GET", url: "/api/aomi/api/thread/secrets" });
+    const app = buildApp({ aomi: { backendUrl: BACKEND, apps: APPS, fetchImpl } });
+    const account = await app.inject({ method: "GET", url: "/api/aomi/nav-oracle/api/account/payment/byok" });
+    const secret = await app.inject({ method: "GET", url: "/api/aomi/nav-oracle/api/thread/secrets" });
+    const unknown = await app.inject({ method: "GET", url: "/api/aomi/other/api/thread/apps" });
     expect(account.statusCode).toBe(404);
     expect(secret.statusCode).toBe(404);
+    expect(unknown.statusCode).toBe(404);
     expect(calls).toHaveLength(0);
     await app.close();
   });

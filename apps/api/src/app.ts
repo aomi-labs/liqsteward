@@ -13,6 +13,24 @@ import {
 } from "@liqsteward/core";
 import { isAddress, isHash, type Hex } from "viem";
 import { registerAomiConsole, type AomiConsoleOptions } from "./aomi.js";
+import { createNavDb, migrateNavDb } from "./nav/db.js";
+import pilotPolicy from "./nav/fixtures/pilot-policy.json" with { type: "json" };
+import { policyDigest, validatePolicy } from "./nav/policy.js";
+import { registerNav } from "./nav/routes.js";
+import { NavStore } from "./nav/store.js";
+
+export type NavOptions = {
+  /** Postgres connection string. Unset = `/api/nav/*` answers 503. */
+  databaseUrl?: string;
+  /** Bearer token the Aomi apps present on plugin routes. */
+  serviceToken?: string;
+  /** JSON-RPC used only to pin a block at `open_valuation`. */
+  rpcUrl?: string;
+  /** Injectable fetch for external price sources (tests). */
+  fetchImpl?: typeof fetch;
+  /** Skip running migrations at boot (tests own the schema). */
+  skipMigrations?: boolean;
+};
 
 type ContainmentEncodingBody = {
   chain_id: number;
@@ -78,7 +96,7 @@ async function vaultAllocations(address: string, chainId: number) {
 }
 
 export function buildApp(
-  options: { rpcUrl?: string; webOrigin?: string; aomi?: AomiConsoleOptions } = {},
+  options: { rpcUrl?: string; webOrigin?: string; aomi?: AomiConsoleOptions; nav?: NavOptions } = {},
 ) {
   const app = Fastify({ logger: true });
   const fixture = usd0ppFixture();
@@ -87,6 +105,38 @@ export function buildApp(
   app.register(cors, { origin: options.webOrigin ?? true });
 
   registerAomiConsole(app, options.aomi);
+
+  const nav = options.nav ?? {};
+  if (nav.databaseUrl) {
+    const { db, close } = createNavDb(nav.databaseUrl);
+    const store = new NavStore(db);
+    if (!nav.skipMigrations) {
+      app.addHook("onReady", async () => {
+        await migrateNavDb(db);
+      });
+    }
+    // The pilot policy ships as a fixture so a fresh store can open a
+    // valuation before anyone uploads through the dashboard. Uploads with the
+    // same digest are no-ops, so re-seeding on every boot is idempotent.
+    app.addHook("onReady", async () => {
+      const parsed = validatePolicy(pilotPolicy);
+      if (!parsed.ok) throw new Error(`pilot policy fixture invalid: ${parsed.error}`);
+      const policy = parsed.policy;
+      await store.insertPolicy({
+        policy_id: policy.policy_id,
+        vault: policy.scope.owned_accounts[0]!,
+        digest: policyDigest(policy as unknown as Record<string, unknown>),
+        body: policy as unknown as Record<string, unknown>,
+        uploaded_by: policy.uploaded_by,
+      });
+    });
+    app.addHook("onClose", async () => {
+      await close();
+    });
+    registerNav(app, { store, serviceToken: nav.serviceToken, rpcUrl: nav.rpcUrl ?? rpcUrl, fetchImpl: nav.fetchImpl });
+  } else {
+    app.all("/api/nav/*", async (_request, reply) => reply.code(503).send({ error: "nav store is not configured (DATABASE_URL)" }));
+  }
 
   app.get("/api/health", async () => ({ ok: true, service: "liqsteward", version: "0.2.0" }));
 

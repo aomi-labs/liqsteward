@@ -3,22 +3,31 @@ import { randomUUID } from "node:crypto";
 import { Readable } from "node:stream";
 
 /**
- * Operator-console BFF for the deployed LiqSteward Aomi app.
+ * Operator-console BFF for the LiqSteward Aomi apps.
  *
  * The browser never talks to the Aomi backend directly. This layer provides
- * deployment status plus a same-origin, streaming relay for the native widget.
- * The relay owns the immutable app binding and forwards only explicit runtime
- * paths and headers, leaving account, secret, signing, and broadcast surfaces
- * inaccessible from the LiqSteward frontend.
+ * deployment status plus a same-origin, streaming relay for the native
+ * widget, one path prefix per app (`/api/aomi/<app>/…`). The relay owns the
+ * app binding and forwards only explicit runtime paths and headers, leaving
+ * account, secret, signing, and broadcast surfaces inaccessible from the
+ * frontend.
  */
 
 export type AomiConsoleOptions = {
   /** Aomi backend origin, e.g. https://api-staging.aomi.dev */
   backendUrl?: string;
-  /** Deployed Aomi app name the console operates. */
-  app?: string;
+  /** Deployed Aomi app names the console may operate. First is the default. */
+  apps?: string[];
   /** Injectable fetch for tests. */
   fetchImpl?: typeof fetch;
+};
+
+export type AppStatus = {
+  reachable: boolean;
+  deployed: boolean;
+  active: boolean;
+  artifactReady: boolean;
+  applicationId: number | null;
 };
 
 const WIDGET_RUNTIME_PREFIX = "/api/aomi";
@@ -34,6 +43,7 @@ const WIDGET_REQUEST_HEADERS = [
   "last-event-id",
 ] as const;
 const WIDGET_RESPONSE_HEADERS = ["content-type", "cache-control", "x-request-id"] as const;
+const APP_NAME = /^[a-z0-9][a-z0-9_-]*$/;
 
 function upstreamHeaders(threadId: string): Record<string, string> {
   return { "X-Session-Id": threadId, "X-Thread-Id": threadId };
@@ -41,14 +51,15 @@ function upstreamHeaders(threadId: string): Record<string, string> {
 
 export function registerAomiConsole(app: FastifyInstance, options: AomiConsoleOptions = {}) {
   const backendUrl = (options.backendUrl ?? process.env.AOMI_BACKEND_URL ?? "https://api-staging.aomi.dev").replace(/\/+$/, "");
-  const appName = options.app ?? process.env.AOMI_APP_NAME ?? "liqsteward";
+  const apps = (options.apps ?? (process.env.AOMI_APPS ?? "nav-oracle,liqsteward").split(","))
+    .map((name) => name.trim())
+    .filter((name) => APP_NAME.test(name));
   const fetchImpl = options.fetchImpl ?? fetch;
 
-  let appStatusCache: { at: number; status: Record<string, unknown> } | null = null;
   // A community-hosted app resolves by its stable application row id, not by
   // name (name resolution only covers officially-sourced apps), so every
   // thread call carries `application_id` once the listing has supplied it.
-  let applicationId: number | null = null;
+  const statusCache = new Map<string, { at: number; status: AppStatus }>();
 
   async function proxy(path: string, threadId: string, init?: RequestInit) {
     const response = await fetchImpl(`${backendUrl}${path}`, {
@@ -65,46 +76,59 @@ export function registerAomiConsole(app: FastifyInstance, options: AomiConsoleOp
     return { status: response.status, body };
   }
 
-  async function refreshAppStatus(): Promise<Record<string, unknown>> {
+  async function refreshAppStatus(appName: string): Promise<AppStatus> {
     const now = Date.now();
-    if (appStatusCache && now - appStatusCache.at <= 60_000) return appStatusCache.status;
-    let status: Record<string, unknown> = { reachable: false, deployed: false, active: false, artifactReady: false };
+    const cached = statusCache.get(appName);
+    if (cached && now - cached.at <= 60_000) return cached.status;
+    let status: AppStatus = { reachable: false, deployed: false, active: false, artifactReady: false, applicationId: null };
     try {
       const probe = await proxy("/api/thread/apps", randomUUID());
       if (probe.status === 200 && Array.isArray(probe.body)) {
         const entry = probe.body.find(
           (item) => typeof item === "object" && item !== null && (item as { name?: string }).name === appName,
         ) as { is_active?: boolean; artifact_ready?: boolean; application_id?: number } | undefined;
-        if (typeof entry?.application_id === "number") applicationId = entry.application_id;
         status = {
           reachable: true,
           deployed: Boolean(entry),
           active: entry?.is_active ?? false,
           artifactReady: entry?.artifact_ready ?? false,
-          applicationId: entry?.application_id ?? null,
+          applicationId: typeof entry?.application_id === "number" ? entry.application_id : null,
         };
       }
     } catch {
       // Backend unreachable: report it rather than failing the console shell.
     }
-    appStatusCache = { at: now, status };
+    statusCache.set(appName, { at: now, status });
     return status;
   }
 
-  app.get("/api/console/config", async () => ({
-    app: appName,
-    backendUrl,
-    runtimeUrl: WIDGET_RUNTIME_PREFIX,
-    appStatus: await refreshAppStatus(),
-  }));
+  function resolveApp(requested: string | undefined): string | null {
+    if (!requested) return apps[0] ?? null;
+    return apps.includes(requested) ? requested : null;
+  }
+
+  app.get<{ Querystring: { app?: string } }>("/api/console/config", async (request, reply) => {
+    const appName = resolveApp(request.query.app);
+    if (!appName) return reply.code(404).send({ error: "unknown Aomi app", apps });
+    return {
+      app: appName,
+      apps,
+      backendUrl,
+      runtimeUrl: `${WIDGET_RUNTIME_PREFIX}/${appName}`,
+      appStatus: await refreshAppStatus(appName),
+    };
+  });
 
   // The native widget uses session headers and an SSE stream that browsers
   // cannot send directly to the public backend from an arbitrary site. Keep
   // the browser on this origin and proxy only the runtime surface the widget
   // needs. Credentials, cookies, arbitrary paths, and arbitrary headers never
   // cross this boundary.
-  app.all<{ Params: { "*": string } }>(`${WIDGET_RUNTIME_PREFIX}/*`, async (request, reply) => {
-    const upstreamPath = (request.raw.url ?? request.url).slice(WIDGET_RUNTIME_PREFIX.length);
+  app.all<{ Params: { app: string; "*": string } }>(`${WIDGET_RUNTIME_PREFIX}/:app/*`, async (request, reply) => {
+    const appName = resolveApp(request.params.app);
+    if (!appName) return reply.code(404).send({ error: "unknown Aomi app", apps });
+    const prefix = `${WIDGET_RUNTIME_PREFIX}/${appName}`;
+    const upstreamPath = (request.raw.url ?? request.url).slice(prefix.length);
     const upstreamPathname = new URL(upstreamPath, "http://aomi.invalid").pathname;
     if (!WIDGET_RUNTIME_PATH.test(upstreamPathname) || !WIDGET_RUNTIME_METHODS.has(request.method)) {
       return reply.code(404).send({ error: "unsupported Aomi widget runtime route" });
@@ -129,12 +153,12 @@ export function registerAomiConsole(app: FastifyInstance, options: AomiConsoleOp
     const needsAppScope = upstreamPathname.startsWith("/api/threads")
       || (upstreamPathname.startsWith("/api/thread/") && !WIDGET_DISCOVERY_PATHS.has(upstreamPathname));
     if (needsAppScope) {
-      if (applicationId === null) await refreshAppStatus();
-      if (applicationId === null) {
-        return reply.code(503).send({ error: "LiqSteward application identity is unavailable" });
+      const status = await refreshAppStatus(appName);
+      if (status.applicationId === null) {
+        return reply.code(503).send({ error: `${appName} application identity is unavailable` });
       }
       upstreamUrl.searchParams.set("app", appName);
-      upstreamUrl.searchParams.set("application_id", String(applicationId));
+      upstreamUrl.searchParams.set("application_id", String(status.applicationId));
     }
 
     const upstream = await fetchImpl(upstreamUrl, {

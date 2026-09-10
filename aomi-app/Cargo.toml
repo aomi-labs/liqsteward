@@ -1,17 +1,20 @@
-[package]
-name = "liqsteward-app"
-version = "0.2.0"
-edition = "2024"
-description = "Aomi tool surface for LiqSteward vault operations and execution assurance"
+[workspace]
+resolver = "3"
+members = ["liqsteward", "liqsteward-core", "nav-oracle"]
 
-[lib]
-crate-type = ["cdylib", "rlib"]
-
-[dependencies]
-aomi-sdk = "=4.0.0"
+# Every Aomi app in this workspace must pin the exact `aomi-sdk` the target
+# backend runs (the platform rejects a mismatch at build, promote, and load).
+# Bump here, once, for every member.
+[workspace.dependencies]
+aomi-sdk = "=5.0.0"
 alloy-primitives = "=0.8.25"
 alloy-sol-types = "=0.8.25"
 reqwest = { version = "0.13", default-features = false, features = ["blocking", "json", "rustls"] }
 schemars = "1.0.4"
 serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
+# `preserve_order` matches the host workspace's resolved feature set. The SDK
+# digests app-skill guard tables through `serde_json::to_value(..).to_string()`,
+# so key order is part of the digest and must agree with the host or every
+# guarded skill is rejected at load with `content_digest mismatch`.
+serde_json = { version = "1.0", features = ["preserve_order"] }
+liqsteward-core = { path = "liqsteward-core" }

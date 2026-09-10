@@ -133,9 +133,9 @@ dependencies = [
 
 [[package]]
 name = "aomi-sdk"
-version = "4.0.0"
+version = "5.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b294b880ac907c4fe962a2df8ad55ccef634a145949dd5c946595d9726626a28"
+checksum = "02a6c006835f1aa0096887d2fcc79779449bc0cc7e63cb834ddaf974d240be9f"
 dependencies = [
  "bs58",
  "eyre",
@@ -1713,13 +1713,25 @@ checksum = "32a66949e030da00e8c7d4434b251670a91556f4144941d37452769c25d58a53"
 
 [[package]]
 name = "liqsteward-app"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "alloy-primitives",
  "alloy-sol-types",
  "aomi-sdk",
  "reqwest",
  "schemars 1.2.2",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "liqsteward-core"
+version = "0.1.0"
+dependencies = [
+ "alloy-primitives",
+ "alloy-sol-types",
+ "aomi-sdk",
+ "reqwest",
  "serde",
  "serde_json",
 ]
@@ -1768,6 +1780,19 @@ dependencies = [
  "libc",
  "wasi",
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "nav-oracle"
+version = "0.1.0"
+dependencies = [
+ "alloy-primitives",
+ "aomi-sdk",
+ "liqsteward-core",
+ "reqwest",
+ "schemars 1.2.2",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -2616,6 +2641,7 @@ version = "1.0.151"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c841b55ecdae098c80dcae9cf767f6f8a0c2cdb3416bbef72181df4d0fe73f14"
 dependencies = [
+ "indexmap 2.14.0",
  "itoa",
  "memchr",
  "serde",

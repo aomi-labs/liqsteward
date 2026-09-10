@@ -1,0 +1,4 @@
+[app]
+name = "nav-oracle"
+display_name = "NAV Oracle"
+public = true
