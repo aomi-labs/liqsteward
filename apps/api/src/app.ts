@@ -120,7 +120,7 @@ export function buildApp(
     // same digest are no-ops, so re-seeding on every boot is idempotent.
     app.addHook("onReady", async () => {
       const parsed = validatePolicy(pilotPolicy);
-      if (!parsed.ok) throw new Error(`pilot policy fixture invalid: ${parsed.error}`);
+      if (parsed.ok === false) throw new Error(`pilot policy fixture invalid: ${parsed.error}`);
       const policy = parsed.policy;
       await store.insertPolicy({
         policy_id: policy.policy_id,

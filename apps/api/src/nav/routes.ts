@@ -78,7 +78,7 @@ export function registerNav(app: FastifyInstance, options: NavRouteOptions) {
     const row = await store.policy(dag.policy.policy_id, dag.policy.version);
     if (!row) throw new Error(`policy ${dag.policy.policy_id} v${dag.policy.version} vanished`);
     const parsed = validatePolicy(row.body);
-    if (!parsed.ok) throw new Error(`stored policy is invalid: ${parsed.error}`);
+    if (parsed.ok === false) throw new Error(`stored policy is invalid: ${parsed.error}`);
     return parsed.policy;
   }
 
@@ -103,7 +103,7 @@ export function registerNav(app: FastifyInstance, options: NavRouteOptions) {
 
   app.post<{ Body: Record<string, unknown> }>("/api/nav/policies", { preHandler: requireService }, async (request, reply) => {
     const parsed = validatePolicy(request.body);
-    if (!parsed.ok) return reply.code(400).send({ error: parsed.error });
+    if (parsed.ok === false) return reply.code(400).send({ error: parsed.error });
     const policy = parsed.policy;
     const vault = policy.scope.owned_accounts[0]!;
     const digest = policyDigest(policy as unknown as Record<string, unknown>);
@@ -143,7 +143,7 @@ export function registerNav(app: FastifyInstance, options: NavRouteOptions) {
       : (await store.policiesForVault(vault))[0] ?? null;
     if (!policyRow) return reply.code(400).send({ error: `no accounting policy uploaded for ${vault}` });
     const parsed = validatePolicy(policyRow.body);
-    if (!parsed.ok) return reply.code(500).send({ error: `stored policy invalid: ${parsed.error}` });
+    if (parsed.ok === false) return reply.code(500).send({ error: `stored policy invalid: ${parsed.error}` });
     const policy = parsed.policy;
     if (policy.scope.chain_id !== body.chain_id) return reply.code(400).send({ error: `policy is for chain ${policy.scope.chain_id}` });
     if (!policy.scope.owned_accounts.some((account) => account.toLowerCase() === vault)) {
@@ -293,7 +293,7 @@ export function registerNav(app: FastifyInstance, options: NavRouteOptions) {
     if (!Array.isArray(body.evidence) || body.evidence.length === 0) return fail("read_incomplete", "no evidence supplied");
     for (const evidence of body.evidence) {
       const verdict = verifyEvidence(evidence, dag);
-      if (!verdict.ok) return fail(verdict.reason, verdict.detail);
+      if (verdict.ok === false) return fail(verdict.reason, verdict.detail);
     }
     if (node.expected_reads && node.stage === body.stage) {
       const missing = node.expected_reads.filter(
@@ -401,7 +401,7 @@ export function registerNav(app: FastifyInstance, options: NavRouteOptions) {
     const policy = await loadPolicy(dag);
     const nodes = await store.nodes(dag.dag_id);
     const outcome = compileDag(dag, nodes, policy, now());
-    if (!outcome.ok) return reply.code(409).send({ refused: outcome.refused, blocking: outcome.blocking });
+    if (outcome.ok === false) return reply.code(409).send({ refused: outcome.refused, blocking: outcome.blocking });
     await store.saveReport(outcome.report);
     await store.replaceBreaks(dag.dag_id, outcome.breaks);
     await store.updateDag(dag.dag_id, { status: "compiled", dagDigest: outcome.dag_digest });
