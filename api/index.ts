@@ -13,6 +13,8 @@ const app = buildApp({
   nav: {
     databaseUrl: process.env.DATABASE_URL,
     serviceToken: process.env.LIQSTEWARD_SERVICE_TOKEN,
+    // Production schema is provisioned separately; never run DDL per cold start.
+    skipMigrations: true,
   },
 });
 const ready = app.ready();

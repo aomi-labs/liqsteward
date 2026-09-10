@@ -18,6 +18,8 @@ describe("NAV database TLS configuration", () => {
       connectionString: "postgresql://user:password@db.example/postgres?application_name=steward",
       ssl: { ca: "test-ca", rejectUnauthorized: true },
       max: 4,
+      connectionTimeoutMillis: 10_000,
+      statement_timeout: 20_000,
     });
   });
 
@@ -25,12 +27,12 @@ describe("NAV database TLS configuration", () => {
     vi.stubEnv("DATABASE_CA_CERT", "");
     const url = "postgresql://user:password@db.example/postgres?sslmode=verify-full";
     createNavDb(url);
-    expect(Pool).toHaveBeenCalledWith({ connectionString: url, max: 4 });
+    expect(Pool).toHaveBeenCalledWith({ connectionString: url, max: 4, connectionTimeoutMillis: 10_000, statement_timeout: 20_000 });
   });
 
   it("does not require TLS for an unconfigured local development database", () => {
     vi.stubEnv("DATABASE_CA_CERT", "");
     createNavDb("postgresql://localhost:5432/liqsteward");
-    expect(Pool).toHaveBeenCalledWith({ connectionString: "postgresql://localhost:5432/liqsteward", max: 4 });
+    expect(Pool).toHaveBeenCalledWith({ connectionString: "postgresql://localhost:5432/liqsteward", max: 4, connectionTimeoutMillis: 10_000, statement_timeout: 20_000 });
   });
 });

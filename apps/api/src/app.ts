@@ -98,7 +98,7 @@ async function vaultAllocations(address: string, chainId: number) {
 export function buildApp(
   options: { rpcUrl?: string; webOrigin?: string; aomi?: AomiConsoleOptions; nav?: NavOptions } = {},
 ) {
-  const app = Fastify({ logger: true });
+  const app = Fastify({ logger: true, pluginTimeout: 30_000 });
   const fixture = usd0ppFixture();
   const rpcUrl = options.rpcUrl;
 

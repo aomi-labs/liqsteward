@@ -17,6 +17,8 @@ export function createNavDb(databaseUrl: string): { db: NavDb; close: () => Prom
     connectionString: ca ? url.toString() : databaseUrl,
     ...(ca ? { ssl: { ca, rejectUnauthorized: true } } : {}),
     max: 4,
+    connectionTimeoutMillis: 10_000,
+    statement_timeout: 20_000,
   });
   const db = drizzle(pool, { schema });
   return { db, close: () => pool.end() };
