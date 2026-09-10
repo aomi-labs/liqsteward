@@ -1,6 +1,55 @@
 # Steward landing page
 
-## NAV navigation integration — pending publication
+## Current NAV deployment verification — 2026-09-10 20:57 CST
+
+Supersedes the historical publication status below. Website/API code through
+`3ee6e8b` is deployed at https://liqsteward-aomi-labs.vercel.app, deployment
+`dpl_BJGPmgpFrZNYt5DwrBpomM7DzANE`. The public website uses Aomi **staging**:
+discovery `api-staging.aomi.dev`, guest identity and Agent API
+`chat-staging.aomi.dev`. Backend source verified at `e3f1953e35305ed5614e71c50e42f7f86a89628f`.
+The NAV app resolves to application `2937809`, active with an available artifact.
+
+Vercel includes the verified PostgreSQL TLS change, database connection, NAV
+service token, and Ethereum RPC configuration. The NAV store is the separate
+Steward Supabase project `ztcfpwonpiaqbhnfpznc`; platform auth/runtime uses staging
+`cmwkmjpfbffmdiluvgtu`. No wallet, signing provider, transaction, or budget change
+was used for this smoke. Browser: existing task in-app tab; identity: anonymous,
+origin-bound widget bearer; GitHub identity not applicable to the smoke.
+
+The old widget's `/api/thread/chat` route no longer exists on staging. Updated
+packages are widget-lib 2.0.15, react 0.6.9, and client 0.6.11. A narrow server
+relay handles the portal Agent route's missing CORS headers while preserving
+visitor authentication, enforcing same-origin requests and the NAV app target,
+and excluding action submission/signing routes. NAV management writes require
+service authentication; their browser controls are read-only pending manager auth.
+
+| Story | Observed evidence | Verdict |
+| --- | --- | --- |
+| Deployment/build | Vercel Ready; 30 core/API tests, seven landing/navigation checks and TypeScript/build pass | PASS |
+| Guest identity and Agent transport | Browser guest issuance, turn admission and polling all succeed | PASS |
+| Live NAV traversal/compile/export | Runtime returns `execution_budget_exhausted`; no DAG created | BLOCKED |
+| Wallet/signing stories | Not requested; no wallet connected or transaction attempted | NOT RUN |
+
+| Endpoint | Expected / observed | Verdict |
+| --- | --- | --- |
+| POST portal `/api/auth/widget/guest` | 200 / 200 | PASS |
+| POST Steward `/api/aomi/nav-oracle/v1/agent/chat` with guest bearer | 200 / 200 | PASS |
+| GET same relay `/chat/:id` | 200 / 200 | PASS |
+| POST same relay without bearer | 401 / 401 | PASS |
+| POST `/api/nav/policies` without service auth | 401 / 401 | PASS |
+| GET `/api/nav/dags?vault=...` | 200 / 200, empty list | Storage read PASS; valuation not proved |
+
+| Layer | Remaining blocker |
+| --- | --- |
+| Inference funding | Live api-server has `AOMI_GUEST_CREDITS=25` ($0.25); NAV run hits the guest exposure fence. Use authenticated account access or an explicitly approved demo funding arrangement. Do not increase global guest limits implicitly. |
+| Agent-to-NAV service integration | Token match, live traversal, compilation and report export cannot be verified until inference proceeds. |
+| Customer readiness | Manager login/authorization remains unfinished; rotate the token previously pasted into chat before customer use. |
+
+Test session: `8a9cc554-a6d6-4452-a80e-eeec949b5f9b`.
+No secret values are recorded here. The other agent's local Rust lockfile
+change was not included in these website commits.
+
+## Historical NAV navigation integration — previously pending publication
 
 The shared checkout now uses URL-backed navigation: `/` is the landing,
 `/app/nav-oracle` is NAV, and `/app/replay` is the incident replay.
