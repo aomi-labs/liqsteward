@@ -82,18 +82,15 @@ End to end with a model: build `aomi-cli` from `product-mono` main, copy `aomi-a
 
 ### Control room ↔ deployed Aomi app
 
-The default **Control room** view embeds Aomi's native widget UI for Markdown, streaming, thread persistence, and tool-call traces while operating the deployed `liqsteward` app. The browser never talks to the Aomi backend directly; the console BFF in `apps/api/src/aomi.ts` streams the widget runtime on the same origin and enforces the configured app name plus immutable `application_id` on every scoped thread request.
+The NAV console embeds Aomi's native widget for Markdown, thread persistence, and tool-call traces. It fixes the Agent target to `nav-oracle` and the exact deployed application ID returned by discovery. The widget connects to the matching Aomi portal's public `/v1/agent` API using its supported origin-bound guest session flow. The obsolete `/api/thread/chat` relay is removed.
 
 | Endpoint | Purpose |
 | --- | --- |
 | `GET /api/console/config` | App name, backend, and live deployment status |
-| `/api/aomi/api/thread/*` | Allowlisted native chat, state, event, model, app, and SSE routes |
-| `/api/aomi/api/threads/*` | Allowlisted native thread lifecycle routes |
-| `POST /api/aomi/api/exec/simulate` | Native batch-simulation transport |
 
-The relay forwards only the runtime's explicit method/path/header allowlist. It never forwards browser cookies or authorization headers, and account, secret, signing, and broadcast routes remain outside the surface.
+Guest credentials are issued by Aomi for the visitor, not shared by Steward. `LIQSTEWARD_SERVICE_TOKEN` authenticates agent-to-NAV-storage calls only and is never sent to the widget. No wallet is connected or signing authority granted by opening the valuation console. NAV policy and break-management writes remain service-authenticated; browser management controls are read-only pending manager authentication.
 
-Configure with `AOMI_BACKEND_URL` (default `https://api-staging.aomi.dev`) and `AOMI_APP_NAME` (default `liqsteward`).
+Configure discovery with `AOMI_BACKEND_URL` (default `https://api-staging.aomi.dev`), the matching public runtime with `AOMI_PORTAL_URL` (default `https://chat-staging.aomi.dev`), and available apps with `AOMI_APPS` (default `nav-oracle,liqsteward`). Keep backend and portal in the same environment.
 
 Deploying the Rust app itself goes through the Aomi community platform: register the repo as a project, `POST /api/projects/:id/deploy` with a pushed commit SHA, wait for the platform CI artifact, then activate the release. The app manifest pins every tool-parameter property to a typed schema — model providers reject untyped nodes, which rejects the entire app at load time.
 

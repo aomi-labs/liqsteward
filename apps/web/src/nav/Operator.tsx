@@ -98,7 +98,7 @@ export function Operator({ config, vault, dagId, onError }: {
       walletPosition={null}
       products={null}
       persistThread
-      threadPersistenceScope="nav-oracle"
+      threadPersistenceScope={`nav-oracle-agent-v1:${config.runtimeUrl}`}
     >
       <Composer vault={vault} dagId={dagId} onError={onError} />
     </AomiFrame.Root>
