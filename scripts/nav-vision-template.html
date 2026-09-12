@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NAV Oracle · illustrative scenario</title>
+<style>
+:root{--bg:#f3f0e9;--ink:#1a1a1a;--muted:#6b665c;--line:#d9d3c5;--card:#fbfaf6;--lime:#dff58a;--blue:#3b6fc4;--green:#2f8a3e;--red:#b0392b;--amber:#b8791b;--grey:#9a9385;--mono:ui-monospace,SFMono-Regular,Menlo,monospace}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 -apple-system,Inter,system-ui,sans-serif}
+.banner{background:#1a1a1a;color:#f3f0e9;font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:6px 22px;display:flex;gap:18px;align-items:center}.banner b{color:var(--lime)}
+header{display:flex;align-items:baseline;gap:18px;padding:12px 22px;border-bottom:1px solid var(--line);background:var(--card);flex-wrap:wrap}
+header h1{font:600 22px Georgia,serif;margin:0}header .kicker{font-size:11px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}
+header .meta{margin-left:auto;display:flex;gap:16px;font-family:var(--mono);font-size:11px;color:var(--muted);flex-wrap:wrap}
+main{display:grid;grid-template-columns:30% minmax(0,1fr) 27%;gap:12px;padding:12px 16px;height:calc(100vh - 92px)}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:8px;display:flex;flex-direction:column;min-height:0;min-width:0;overflow:hidden}
+.panel h2{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0;padding:10px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+.panel h2 .sp{flex:1}
+.scroll{overflow:auto;padding:12px;flex:1}
+.msg{margin:0 0 12px}.msg .who{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+.user .bubble{background:#e9f0d2;border-radius:10px;padding:10px 12px}
+.assistant .bubble{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;white-space:pre-wrap}
+.tool{border-left:3px solid var(--blue);background:#f6f4ee;border-radius:0 8px 8px 0;padding:6px 10px;margin:0 0 6px;font-family:var(--mono);font-size:11px}
+.tool.read{border-left-color:var(--grey)}.tool.write{border-left-color:var(--green)}.tool.bad{border-left-color:var(--red)}.tool.sim{border-left-color:var(--amber)}
+.tool summary{cursor:pointer;display:flex;gap:8px;align-items:center;list-style:none}.tool summary::-webkit-details-marker{display:none}
+.tool .name{font-weight:600}.tool .hint{color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tool pre{margin:6px 0 0;white-space:pre-wrap;word-break:break-all;max-height:240px;overflow:auto;color:#333}
+svg{display:block}
+.node rect{fill:#fff;stroke:var(--line);stroke-width:1.2}.node text{font-size:10px}.node .kind{font-weight:600}.node .pill{font-size:8px;letter-spacing:.08em;text-transform:uppercase}
+.st-verified rect{stroke:var(--blue)}.st-priced rect{stroke:var(--green)}.st-unresolved rect{stroke:var(--red);stroke-dasharray:4 3}.st-excluded rect{stroke:var(--grey);stroke-dasharray:2 3}
+.node.sel rect{stroke-width:2.5;fill:#f7fbe8}.node{cursor:pointer}.node.break rect{fill:#fdf1ee}
+.edge{stroke:#c9c2b3;fill:none}.edge.owes{stroke:var(--red);stroke-dasharray:5 3}.edge.priced_by{stroke:#9fb3d6;stroke-dasharray:2 3}.edge.represents{stroke:#8fbf98}
+.elabel{font-size:8px;fill:#9a9385}
+.toggle{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}.toggle button{border:0;background:transparent;padding:4px 10px;font:11px inherit;cursor:pointer;letter-spacing:.05em}.toggle button.on{background:var(--ink);color:#fff}
+.inspector{border-top:1px solid var(--line);padding:10px 14px;max-height:42%;overflow:auto;font-size:12px}
+.inspector h3{margin:0 0 6px;font:600 13px Georgia,serif}.inspector .kv{display:grid;grid-template-columns:110px 1fr;gap:3px 10px}.inspector dt{color:var(--muted)}.inspector dd{margin:0;font-family:var(--mono);font-size:11px;word-break:break-all}
+.ev{font-family:var(--mono);font-size:10px;color:#444;border-top:1px dashed var(--line);padding:3px 0}
+.tabs{display:flex;border-bottom:1px solid var(--line)}.tabs button{flex:1;border:0;background:transparent;padding:8px;font:11px inherit;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;color:var(--muted)}.tabs button.on{color:var(--ink);border-bottom:2px solid var(--ink)}
+.big{padding:10px 14px}.big .n{font:600 24px Georgia,serif}.big .l{font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase}
+.navbox{background:var(--lime);border-radius:8px;margin:0 14px 10px}
+table{width:100%;border-collapse:collapse;font-size:11px}th,td{text-align:left;padding:5px 8px;border-top:1px solid var(--line);vertical-align:top}th{color:var(--muted);font-weight:500}
+.pass{color:var(--green);font-weight:600}.fail{color:var(--red);font-weight:600}
+.sev{font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:1px 6px;border-radius:10px;border:1px solid}.sev.critical{color:var(--red);border-color:var(--red)}.sev.warn{color:var(--amber);border-color:var(--amber)}.sev.info{color:var(--muted);border-color:var(--line)}
+.brk{border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin:0 10px 8px;font-size:12px}.brk.critical{border-color:#e6b8b1;background:#fdf6f4}.brk .t{display:flex;gap:8px;align-items:center;margin-bottom:4px}.brk .t b{font-family:var(--mono);font-size:11px}
+.attr{margin:6px 0 0;padding:0;list-style:none;font-size:11px}.attr li{display:grid;grid-template-columns:96px 84px 1fr;gap:6px;padding:2px 0;border-top:1px dashed var(--line)}.attr li span:first-child{font-family:var(--mono)}.attr li span:nth-child(2){text-align:right;font-family:var(--mono)}
+.hist{font-size:10px;color:var(--muted);margin-top:4px}
+.pol h4{margin:12px 14px 4px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}.pol ul{margin:0 14px 6px;padding-left:16px;font-size:12px}.pol .dig{font-family:var(--mono);font-size:10px;color:var(--muted);padding:0 14px;word-break:break-all}
+.legend{font-size:11px;color:var(--muted);padding:6px 14px;border-top:1px solid var(--line)}
+.note{font-size:11px;color:var(--muted);padding:8px 14px;border-top:1px solid var(--line)}
+a.nl{color:var(--blue);cursor:pointer;text-decoration:underline dotted}
+@media (max-width:1100px){main{grid-template-columns:1fr;height:auto}.panel{max-height:80vh}}
+</style></head><body>
+<div class="banner"><b>Illustrative scenario</b><span>synthetic positions, prices, and stamps</span><span>·</span><span>real tool protocol, data model, policy schema, and check semantics</span></div>
+<header><span class="kicker">NAV oracle · what a full valuation looks like</span><h1 id="title"></h1><div class="meta" id="meta"></div></header>
+<main>
+<section class="panel"><h2>Agent session <span class="sp"></span><span style="font-weight:400;letter-spacing:0;text-transform:none">two turns · pre-state, then post-state</span></h2><div class="scroll" id="chat"></div><div class="note">The turn shape, tool names, arguments, retry on a digest mismatch, and phase changes follow the shipped protocol. Values are synthetic.</div></section>
+<section class="panel"><h2>Position DAG <span class="sp"></span><span class="toggle"><button id="btn-pre" class="on">pre-state</button><button id="btn-post">post-state · after reallocate</button></span></h2><div class="scroll" id="dag" style="padding:0"></div><div class="inspector" id="inspector">Click a node to inspect its evidence, valuation, posted views, and boundary.</div><div class="legend">blue = verified · green = priced · red dashed = unresolved · grey dashed = excluded by policy · red edge = owes · green edge = look-through · dotted edge = priced by · pink fill = attributed break</div></section>
+<section class="panel"><div class="tabs"><button class="on" data-tab="nav">NAV</button><button data-tab="breaks">Breaks</button><button data-tab="policy">Policy</button></div><div class="scroll" id="side" style="padding:0"></div></section>
+</main>
+<script>
+const D = __DATA__;
+let phase = "pre", tab = "nav", selected = null;
+const usd = v => v.toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const short = (s, l=6, r=4) => s && s.length > l+r+1 ? s.slice(0,l)+"…"+s.slice(-r) : (s||"");
+document.getElementById("title").textContent = D.vault.label;
+document.getElementById("meta").innerHTML = `<span>${short(D.vault.address,8,4)}</span><span>block ${D.pin.block_number.toLocaleString("en-US")}</span><span>${short(D.pin.block_hash,10,6)}</span><span>policy ${D.policy.policy_id} v${D.policy.version}</span><span>${short(D.policy.digest,10,6)}</span>`;
+
+// ── chat ──
+const chat = document.getElementById("chat");
+for (const e of D.transcript) {
+  if (e.role !== "tool") { const d = document.createElement("div"); d.className = "msg " + e.role; d.innerHTML = `<div class="who">${e.role}</div><div class="bubble"></div>`; d.querySelector(".bubble").textContent = e.body; chat.appendChild(d); continue; }
+  const j = e.json; let cls = "", hint = "";
+  if (e.name.includes("pinned read")) { cls = "read"; hint = j.sim ? `sim world seq ${j.sim.seq} · keccak ${j.result_keccak}` : `served_block ${j.served_block} · keccak ${j.result_keccak}`; }
+  else if (e.name === "write_to_dag") { cls = j.verdict === "unresolved" ? "bad" : "write"; hint = `${j.verdict} ${j.node.node_id}${j.children ? " · +" + j.children.length + " children" : ""}${j.frontier_remaining !== undefined ? " · frontier " + j.frontier_remaining : ""}${j.reason ? " · " + j.reason : ""}`; }
+  else if (e.name === "expand_node") hint = `${j.node_id} · ${j.adapter || ""} · stage ${j.stage ?? 0} · ${(j.reads||[]).length} reads${j.attempt ? " · attempt " + j.attempt : ""}`;
+  else if (["sim_open","sim_apply","evm_stage_tx","stage_reallocation"].includes(e.name)) { cls = "sim"; hint = e.name === "sim_apply" ? `batch_success ${j.batch_success} · applied ${j.applied_ids.join(",")}` : e.name === "evm_stage_tx" ? `pending_tx_id ${j.pending_tx_id} · ${j.selector}` : e.name === "sim_open" ? `world at ${j.sim.block_number} · ${short(j.sim.block_hash,10,6)}` : `calldata ${j.calldata_bytes} bytes · keccak ${j.calldata_keccak}`; }
+  else if (e.name === "compile_nav") hint = `NAV ${j.report.totals.nav_base} · ${j.report.checks} checks · ${j.report.failed} failed · ${j.breaks} breaks`;
+  else if (e.name === "price_nodes") hint = `${j.priced.length} priced · ${j.unpriced.length} unpriced · ${(j.warnings||[]).length} warnings`;
+  else if (e.name === "open_valuation") hint = `${j.dag_id} · ${j.phase} · pin ${j.pin ? j.pin.block_number : D.pin.block_number}`;
+  else if (e.name === "activate_skills") hint = j.activated.join(", ");
+  else if (e.name === "get_accounting_policy") hint = `${j.policy_id} v${j.version} · ${j.pricing} pricing rules · ${j.reconciliation} checks`;
+  const d = document.createElement("details"); d.className = "tool " + cls;
+  d.innerHTML = `<summary><span class="name">${e.name}</span><span class="hint"></span></summary><pre></pre>`;
+  d.querySelector(".hint").textContent = hint; d.querySelector("pre").textContent = JSON.stringify(j, null, 2); chat.appendChild(d);
+}
+
+// ── dag ──
+function state() { return D[phase]; }
+function breakNodes() { const s = new Set(); for (const b of state().breaks) for (const id of b.node_ids) s.add(id); for (const b of state().breaks) for (const a of (b.attribution||[])) s.add(a.node_id); return s; }
+function renderDag() {
+  const {nodes, edges} = state(); const byId = new Map(nodes.map(n => [n.node_id, n]));
+  const parents = new Map(); for (const e of edges) { (parents.get(e.child) || parents.set(e.child, []).get(e.child)).push(e.parent); }
+  const depth = new Map(); const layer = id => { if (depth.has(id)) return depth.get(id); const ps = parents.get(id) || []; const d = ps.length ? 1 + Math.max(...ps.map(layer)) : 0; depth.set(id, d); return d; };
+  nodes.forEach(n => layer(n.node_id));
+  const layers = []; for (const n of nodes) (layers[depth.get(n.node_id)] ||= []).push(n);
+  const W = 176, H = 60, GX = 18, GY = 78; const cols = Math.max(...layers.map(l => l.length)); const width = Math.max(cols * (W+GX) + GX, 960), height = layers.length * (H+GY) + 24;
+  const pos = new Map(); layers.forEach((l, li) => { const total = l.length*(W+GX)-GX; const x0 = (width-total)/2; l.forEach((n, i) => pos.set(n.node_id, {x: x0 + i*(W+GX), y: 16 + li*(H+GY)})); });
+  const flagged = breakNodes();
+  let svg = `<svg viewBox="0 0 ${width} ${height}" style="width:${width}px;height:${height}px">`;
+  for (const e of edges) { const a = pos.get(e.parent), b = pos.get(e.child); if (!a||!b) continue; const mx = (a.x+b.x)/2 + W/2, my = (a.y+H+b.y)/2; svg += `<path class="edge ${e.relation}" d="M${a.x+W/2},${a.y+H} C${a.x+W/2},${a.y+H+GY/2} ${b.x+W/2},${b.y-GY/2} ${b.x+W/2},${b.y}"/><text class="elabel" x="${mx+4}" y="${my}">${e.relation}</text>`; }
+  for (const n of nodes) { const p = pos.get(n.node_id); const q = n.quantity ? `${usd(n.quantity.raw)} ${n.quantity.symbol}` : (n.unresolved ? n.unresolved.reason : (n.status === "excluded" ? "out of scope" : "—")); const v = n.value_base !== null && n.value_base !== undefined ? `${n.look_through ? "look-through " : ""}${usd(n.value_base)} USDC` : ""; const colour = {verified:"#3b6fc4",priced:"#2f8a3e",unresolved:"#b0392b",excluded:"#9a9385"}[n.status];
+    svg += `<g class="node st-${n.status}${flagged.has(n.node_id) ? " break" : ""}${selected === n.node_id ? " sel" : ""}" data-id="${n.node_id}" transform="translate(${p.x},${p.y})"><rect width="${W}" height="${H}" rx="6"/><text class="kind" x="9" y="15">${n.kind}</text><text class="pill" x="${W-9}" y="15" text-anchor="end" fill="${colour}">${n.status}</text><text x="9" y="30" fill="#6b665c" font-family="monospace" font-size="9">${short(n.contract)}${n.market_id ? " · " + n.semantic.adapter_id.replace("morpho_blue_", "") : " · " + n.semantic.adapter_id}</text><text x="9" y="44" font-family="monospace">${q}</text><text x="9" y="55" font-family="monospace" fill="#2f8a3e" font-size="9">${v}</text></g>`; }
+  svg += "</svg>"; const host = document.getElementById("dag"); const prev = host.firstElementChild ? {l: host.firstElementChild.scrollLeft, t: host.firstElementChild.scrollTop} : null; host.innerHTML = `<div style="overflow:auto;height:100%">${svg}</div>`;
+  const box = host.firstElementChild; if (prev) { box.scrollLeft = prev.l; box.scrollTop = prev.t; } else { box.scrollLeft = Math.max(0, (width - box.clientWidth) / 2); }
+  host.querySelectorAll(".node").forEach(g => g.addEventListener("click", () => { selected = g.dataset.id; renderDag(); renderInspector(); }));
+}
+function renderInspector() {
+  const el = document.getElementById("inspector"); const n = state().nodes.find(x => x.node_id === selected); if (!n) { el.textContent = "Click a node to inspect its evidence, valuation, posted views, and boundary."; return; }
+  const price = n.price ? `${n.price.source} @ ${n.price.price}${n.price.secondary ? ` · secondary ${n.price.secondary} @ ${n.price.secondary_price} (${n.price.deviation_bps} bps)` : ""} · haircut ${n.price.haircut_bps} bps · ${n.price.confidence}` : (n.look_through ? "look-through: valued by its children" : "not valued");
+  const views = n.posted_views.map(v => `${v.view_id} = ${typeof v.value === "number" && v.value > 100 ? usd(v.value) : v.value}`).join("<br>") || "—";
+  const ev = n.evidence.map(e => `<div class="ev">${e.source === "evm_sim" ? "sim" : "read"} · ${e.function_signature}(${e.arguments.join(",")}) → ${short(e.target)} · block ${e.served_block}${e.seq ? " · seq " + e.seq : ""} · keccak ${short(e.result_keccak,12,6)} · ${e.decoded_by}</div>`).join("") || "<div class='ev'>no reads: node produced by policy or boundary</div>";
+  const brks = state().breaks.filter(b => b.node_ids.includes(n.node_id) || (b.attribution||[]).some(a => a.node_id === n.node_id)).map(b => `<span class="sev ${b.severity}">${b.kind}</span>`).join(" ");
+  el.innerHTML = `<h3>${n.kind} · <span style="font-family:var(--mono);font-size:12px">${n.node_id}</span> ${brks}</h3>${n.note ? `<p style="margin:0 0 6px;color:#444">${n.note}</p>` : ""}<dl class="kv"><dt>contract</dt><dd>${n.contract}</dd><dt>account</dt><dd>${n.account}</dd>${n.market_id ? `<dt>market</dt><dd>${n.market_id}</dd>` : ""}<dt>adapter</dt><dd>${n.semantic.adapter_id}@${n.semantic.adapter_version}</dd><dt>boundary</dt><dd>${n.boundary.in_scope ? "in scope" : "OUT OF SCOPE"} · ${n.boundary.rule}</dd>${n.unresolved ? `<dt>unresolved</dt><dd style="color:var(--red)">${n.unresolved.reason} · ${n.unresolved.detail} · attempts ${n.unresolved.attempts}</dd>` : ""}<dt>quantity</dt><dd>${n.quantity ? usd(n.quantity.raw) + " " + n.quantity.symbol : "—"}</dd><dt>valuation</dt><dd>${price}${n.value_base !== null && n.value_base !== undefined ? " → " + usd(n.value_base) + " USDC" : ""}</dd><dt>posted views</dt><dd>${views}</dd></dl><div style="margin-top:6px;font-size:10px;letter-spacing:.1em;color:var(--muted)">EVIDENCE · ${n.evidence.length}</div>${ev}`;
+}
+
+// ── side ──
+function renderSide() {
+  const el = document.getElementById("side"); const s = state();
+  document.querySelectorAll(".tabs button").forEach(b => b.classList.toggle("on", b.dataset.tab === tab));
+  if (tab === "nav") {
+    const rows = s.checks.map(c => `<tr><td>${c.id}${c.node_id ? `<br><a class="nl" data-node="${c.node_id}">${c.node_id}</a>` : ""}</td><td>${usd(c.observed)}</td><td>${usd(c.posted)}</td><td>${c.delta_bps} / ${c.tolerance_bps}</td><td class="${c.verdict}">${c.verdict}</td></tr>`).join("");
+    el.innerHTML = `<div class="big" style="display:grid;grid-template-columns:1fr 1fr"><div><div class="l">Assets</div><div class="n">${usd(s.totals.assets)}</div></div><div><div class="l">Liabilities</div><div class="n">${usd(s.totals.liabilities)}</div></div></div><div class="big navbox"><div class="l">Shadow NAV · ${phase === "post" ? "post-state, same block" : "pre-state"}</div><div class="n">${usd(s.totals.nav)} USDC</div><div class="l">posted totalAssets ${usd(13843461)} · gap ${usd(13843461 - s.totals.nav)} (62 bps)</div></div>${phase === "post" ? `<div class="big" style="padding-top:0"><div class="l">World</div><div style="font-family:var(--mono);font-size:11px">applied ${s.world.applied_ids.join(",")} · seq ${s.world.seq} · block_hash equals the pre-state pin</div><div class="l" style="margin-top:6px">Plan bound</div><div style="font-family:var(--mono);font-size:11px">${s.plan.risk_market_ids.join(", ")} ≤ ${usd(s.plan.max_residual_assets)} USDC</div></div>` : ""}<h2 style="border-top:1px solid var(--line)">Checks · ${s.checks.length}</h2><table><thead><tr><th>Check</th><th>Observed</th><th>Posted</th><th>Δ / tol bps</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+  } else if (tab === "breaks") {
+    el.innerHTML = `<div style="padding:10px 14px 4px;font-size:12px;color:var(--muted)">${s.breaks.length} breaks · ${s.breaks.filter(b => b.status === "open").length} open</div>` + s.breaks.map(b => `<div class="brk ${b.severity}"><div class="t"><span class="sev ${b.severity}">${b.severity}</span><b>${b.kind}</b><span style="color:var(--muted);font-size:11px">${b.check_id}</span><span style="margin-left:auto;font-size:10px;letter-spacing:.08em;text-transform:uppercase">${b.status}</span></div><div><b>observed</b> ${b.observed}<br><b>bound</b> ${b.bound}</div><div style="font-size:11px;margin-top:3px">nodes: ${b.node_ids.map(id => `<a class="nl" data-node="${id}">${id}</a>`).join(", ")}</div>${b.attribution ? `<ul class="attr">${b.attribution.map(a => `<li><a class="nl" data-node="${a.node_id}">${a.node_id}</a><span>${a.amount < 0 ? "−" : "+"}${usd(Math.abs(a.amount))}</span><span>${a.why}</span></li>`).join("")}<li><span>total</span><span>${usd(b.attribution.reduce((x,a)=>x+a.amount,0))}</span><span>of the ${usd(85538)} gap</span></li></ul>` : ""}<div class="hist">${b.history.map(h => `${h.at.slice(5,16).replace("T"," ")} · ${h.status} by ${h.changed_by}${h.note ? " — " + h.note : ""}`).join("<br>")}</div></div>`).join("");
+  } else {
+    const p = D.policy;
+    el.innerHTML = `<div class="pol"><div style="padding:10px 14px 0;font-size:12px"><b>${p.policy_id}</b> v${p.version} · uploaded by ${p.uploaded_by} · ${p.uploaded_at.slice(0,10)}</div><div class="dig">digest ${p.digest}</div>
+    <h4>Scope</h4><ul>${p.scope.boundary.map(b => `<li>${b}</li>`).join("")}<li>chain ${p.scope.chain_id} · max block age ${p.scope.max_block_age_s}s · archive required</li></ul>
+    <h4>Adapters allowed · ${p.adapters.length}</h4><ul><li style="font-family:var(--mono);font-size:11px">${p.adapters.join(" · ")}</li></ul>
+    <h4>Pricing</h4><table><thead><tr><th>Asset</th><th>Primary</th><th>Secondary</th><th>Alert / refuse bps</th><th>Haircut</th></tr></thead><tbody>${p.pricing.map(r => `<tr><td>${r.asset}</td><td style="font-family:var(--mono);font-size:10px">${r.source}</td><td style="font-family:var(--mono);font-size:10px">${r.secondary}</td><td>${r.alert_bps} / ${r.max_deviation_bps}</td><td>${r.haircut_bps} bps</td></tr>`).join("")}</tbody></table>
+    <h4>Liabilities</h4><ul>${p.liabilities.map(l => `<li>${l}</li>`).join("")}</ul>
+    <h4>Exclusions</h4><ul>${p.exclusions.map(e => `<li><span style="font-family:var(--mono);font-size:10px">${short(e.contract,10,4)}</span> — ${e.reason}</li>`).join("")}</ul>
+    <h4>Manual valuations</h4><ul>${p.manual_valuations.map(m => `<li>${m.kind} at <span style="font-family:var(--mono);font-size:10px">${short(m.contract,10,4)}</span> = ${m.value_base} · attested by ${m.attested_by} · ${m.reason}</li>`).join("")}</ul>
+    <h4>Reconciliation checks · opt-in</h4><table><thead><tr><th>Check</th><th>Scope</th><th>Posted view</th><th>Tol</th><th>Sev</th></tr></thead><tbody>${p.reconciliation.map(r => `<tr><td>${r.id}</td><td>${r.scope}${r.kind_filter ? "<br><span style='color:var(--muted)'>" + r.kind_filter + "</span>" : ""}</td><td style="font-family:var(--mono);font-size:10px">${r.posted_view}</td><td>${r.tolerance_bps}</td><td><span class="sev ${r.severity}">${r.severity}</span></td></tr>`).join("")}</tbody></table>
+    <h4>Post-state</h4><ul><li>risk markets: ${p.post_state.risk_market_ids.join(", ")}</li><li>max residual ${p.post_state.max_residual_assets}</li><li>NAV conservation ± ${p.post_state.conservation_bps} bps</li></ul></div>`;
+  }
+  el.querySelectorAll("a.nl").forEach(a => a.addEventListener("click", () => { selected = a.dataset.node; renderDag(); renderInspector(); document.querySelector(`.node[data-id="${selected}"]`)?.scrollIntoView({block:"center",inline:"center",behavior:"smooth"}); }));
+}
+document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => { tab = b.dataset.tab; renderSide(); }));
+document.getElementById("btn-pre").addEventListener("click", () => { phase = "pre"; document.getElementById("btn-pre").classList.add("on"); document.getElementById("btn-post").classList.remove("on"); renderDag(); renderInspector(); renderSide(); });
+document.getElementById("btn-post").addEventListener("click", () => { phase = "post"; document.getElementById("btn-post").classList.add("on"); document.getElementById("btn-pre").classList.remove("on"); renderDag(); renderInspector(); renderSide(); });
+renderDag(); renderInspector(); renderSide();
+</script></body></html>
