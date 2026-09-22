@@ -6,7 +6,7 @@ members = ["liqsteward", "liqsteward-core", "nav-oracle"]
 # backend runs (the platform rejects a mismatch at build, promote, and load).
 # Bump here, once, for every member.
 [workspace.dependencies]
-aomi-sdk = "=5.0.1"
+aomi-sdk = "=5.1.0"
 alloy-primitives = "=0.8.25"
 alloy-sol-types = "=0.8.25"
 reqwest = { version = "0.13", default-features = false, features = ["blocking", "json", "rustls"] }
