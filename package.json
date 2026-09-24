@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "version": "0.1.0",
-  "description": "Manager-controlled operations and execution assurance for onchain vaults",
+  "description": "Agentic intelligence and control for manager-governed onchain vault operations",
   "workspaces": [
     "apps/*",
     "packages/*"
