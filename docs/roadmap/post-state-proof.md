@@ -1,4 +1,4 @@
-# LiqSteward Product Gap: From Transaction Simulation to Vault Execution Assurance
+# Roadmap: From Transaction Simulation to Vault Execution Assurance
 
 ## Executive summary
 
@@ -17,7 +17,7 @@ The product distinction is simple:
 The current manager-controlled workflow is real and deliberately stops before signing or broadcasting:
 
 1. `inspect_vault` produces a live, block-pinned snapshot of the Gauntlet USDC Core vault.
-2. `get_pilot_policy` exposes deterministic constraints and clearly labels assumptions that still require Gauntlet confirmation.
+2. `get_pilot_policy` exposes deterministic constraints and clearly labels assumptions that still require the manager's confirmation.
 3. `plan_reallocation` generates full-exit, policy-limited tranche, and no-change alternatives.
 4. `simulate_plan` re-reads fresh state, validates the selected plan, encodes the exact MetaMorpho `reallocate` call, and routes it through `evm_stage_tx` and `simulate_batch`.
 5. `finalize_simulation` verifies simulation success and calldata identity before emitting unsigned Safe Transaction Builder JSON.
@@ -131,7 +131,7 @@ flowchart TD
     style N fill:#214d36,color:#fff,stroke:#63d69b
 ```
 
-For the Gauntlet USDC Core pilot, the minimum post-state proof should cover:
+For the reference pilot (Gauntlet USDC Core, public data only), the minimum post-state proof should cover:
 
 1. Supply shares or equivalent exposure in every affected Morpho market are at or below the approved residual threshold.
 2. The canonical USDC idle-market position increased by the expected recoverable amount, within a declared tolerance.

@@ -1,12 +1,12 @@
-# LiqSteward
+# Steward (LiqSteward)
 
-Manager-controlled operations and execution assurance for onchain vaults.
+Manager-controlled operations and execution assurance for onchain vaults, built on the [Aomi](https://aomi.dev) execution runtime.
 
-LiqSteward is a forward-deployed control plane for a specific Gauntlet sales conversation: **do not replace Gauntlet's risk models or automation; independently prove what its incident response saw, proposed, executed, and left behind.**
+Steward turns a vault risk signal into deterministic alternatives, validates a manager-selected plan against fresh chain state, runs the exact calldata through Aomi's stage-and-simulate pipeline, and produces an unsigned Safe package for the manager's own signer. Neither Steward nor Aomi is the curator, signer, custodian, or broadcaster.
 
-The pilot reconstructs the January 2025 USD0++ response for the then-named **Gauntlet USDC Balanced** Morpho vault (`0x8eB6…d458`) and now uses that same contract—currently **Gauntlet USDC Core**—as the first live control-room target. It turns a risk signal into deterministic alternatives, validates a manager-selected plan against fresh state, and runs the exact calldata through Aomi's stage-and-simulate pipeline before producing an unsigned Safe package.
+**Reference pilot.** Steward replays the January 2025 USD0++ response of a Morpho USDC vault (then named Gauntlet USDC Balanced, now Gauntlet USDC Core, `0x8eB6…d458`) from public chain data, and uses the same contract as its first live control-room target.
 
-The operating model is explicit: Gauntlet (or another manager) owns the risk decision, a manager-controlled Safe owns approval and execution authority, and LiqSteward is the policy-bound planning and assurance product powered by Aomi's EVM runtime. Neither LiqSteward nor Aomi is the curator, signer, custodian, or broadcaster.
+Live site: [steward-aomi-labs.vercel.app](https://steward-aomi-labs.vercel.app) · incident replay: [/app/replay](https://steward-aomi-labs.vercel.app/app/replay)
 
 ## What is real
 
@@ -22,9 +22,9 @@ The operating model is explicit: Gauntlet (or another manager) owns the risk dec
 - Operator console with the exact containment timeline, provenance labels, execution-route explainer, and hash checker
 - A live **Control room** driving the deployed `liqsteward` Aomi app through a server-side console BFF: operator threads, streamed tool activity, plan selection, and unsigned Safe package download
 
-## The control finding that earns the meeting
+## Why incident identity must be explicit
 
-Gauntlet's [public incident write-up](https://vaultbook.gauntlet.xyz/resources/market-volatility) maps to nine canonical Ethereum transactions from `2025-01-10T02:46:23Z` through `2025-01-10T09:01:35Z`. A broader Morpho query beginning before that response window also captures normal risk-in reallocations. The earlier prototype incorrectly mixed those windows; v0.2 pins the nine containment hashes explicitly.
+The curator's [public incident write-up](https://vaultbook.gauntlet.xyz/resources/market-volatility) maps to nine canonical Ethereum transactions from `2025-01-10T02:46:23Z` through `2025-01-10T09:01:35Z`. A broader Morpho query beginning before that response window also captures normal risk-in reallocations. The earlier prototype incorrectly mixed those windows; v0.2 pins the nine containment hashes explicitly.
 
 That correction is itself the product lesson: incident identity, time window, affected markets, and completion condition must be first-class machine inputs. An assurance tool cannot infer them from a loose indexer query and still claim to reproduce the manager's decision.
 
@@ -101,7 +101,7 @@ The app is deliberately restricted to one Ethereum vault and one approval topolo
 
 No app tool exposes `evm_commit_txs`. The manager imports or otherwise reviews the unsigned package in their own Safe workflow. If a transaction is later executed independently, `verify_execution` checks the canonical receipt and residual indexed exposure.
 
-One assurance gap remains explicit: today's generic `simulate_batch` proves atomic call success, calldata identity, and allocator authorization by non-revert, but does not yet emit arbitrary post-call state reads from the same ephemeral fork. Direct fork post-state assertions must be added to the host before the product claims simulated residual-exposure proof.
+Next host capability: today's `simulate_batch` proves atomic call success, calldata identity, and allocator authorization by non-revert, but does not yet emit arbitrary post-call state reads from the same ephemeral fork. Post-state assertions on the same fork extend this to simulated residual-exposure proof; see [docs/roadmap/post-state-proof.md](docs/roadmap/post-state-proof.md).
 
 ## System shape
 
@@ -109,7 +109,7 @@ One assurance gap remains explicit: today's generic `simulate_batch` proves atom
 flowchart LR
     M["Morpho API<br/>reallocation events"] --> E["Evidence engine<br/>group + reconcile"]
     R["Ethereum RPC<br/>tx + receipt + logs"] --> V["Receipt verifier<br/>authority path"]
-    G["Gauntlet Vaultbook<br/>official narrative"] --> E
+    G["Curator public write-up<br/>official narrative"] --> E
     E --> C["Operator console"]
     V --> C
     E --> P["Evidence package<br/>risk-off-evidence/v1"]
@@ -152,18 +152,20 @@ flowchart LR
 | `verify_execution` | Verify the receipt and residual exposure after an independent manager execution |
 | `export_evidence` | Export claims, provenance, metrics, and timeline |
 
-## Four-week Gauntlet co-design conversion
+## Design-partner pilot
 
-The outside-in prototype needs no Gauntlet access. Production co-design asks for only four narrow inputs:
+Steward is in an early pilot phase with a working prototype running internally on the Aomi runtime, and we are in early conversations with RWA providers and institutional vault operators. A production pilot with a vault manager (a curator, an RWA issuer or an institutional treasury) starts outside-in and asks for four narrow inputs:
 
-1. one sanitized internal alert/model-output payload;
+1. one sanitized internal alert or model-output payload;
 2. the current alert-to-operator approval topology and allocator wallet policy;
 3. the exact definition of acceptable residual exposure and containment completion;
-4. confirmation of the Safe/allocator approval route and the assumed policy thresholds.
+4. confirmation of the Safe or custodian approval route and the policy thresholds.
 
-The acceptance test is a historical incident selected by Gauntlet: ingest the alert, reconstruct affected exposure, produce exact reviewed calldata, run the Aomi stage/simulate route against an authorized fork, return an unsigned manager-approval package, and compare the simulated proposal with the transaction Gauntlet actually executed.
+The acceptance test is a historical incident chosen by the design partner: ingest the alert, reconstruct affected exposure, produce exact reviewed calldata, run the Aomi stage/simulate route against an authorized fork, return an unsigned manager-approval package, and compare the simulated proposal with the transaction the manager actually executed.
 
-## Sources and limitations
+The next host capability, post-state assertions on the same simulation fork, is specified in [docs/roadmap/post-state-proof.md](docs/roadmap/post-state-proof.md).
+
+## Sources
 
 - [Gauntlet automated risk management methodology](https://vaultbook.gauntlet.xyz/vaults/morpho-vaults/curation-methodology-and-risk-factor-overview/automated-risk-management-solutions)
 - [Gauntlet market-volatility incident write-up](https://vaultbook.gauntlet.xyz/resources/market-volatility)
@@ -171,4 +173,4 @@ The acceptance test is a historical incident selected by Gauntlet: ingest the al
 - [MetaMorpho reference implementation](https://github.com/morpho-org/metamorpho)
 - [Morpho Vault V2 role model](https://github.com/morpho-org/vault-v2)
 
-The checked-in fixture is an indexed public-data snapshot. A production assurance system must additionally validate indexer completeness, pin RPC providers with archive guarantees, decode all account-abstraction layers, ingest Gauntlet's internal alert identity, and simulate against a block-exact fork.
+The checked-in fixture is an indexed public-data snapshot. Production deployments add indexer-completeness checks, pinned RPC providers with archive guarantees, decoding of all account-abstraction layers, ingestion of the manager's internal alert identity, and simulation against a block-exact fork.
