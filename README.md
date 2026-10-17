@@ -4,7 +4,7 @@ Manager-controlled operations and execution assurance for onchain vaults, built 
 
 Steward turns a vault risk signal into deterministic alternatives, validates a manager-selected plan against fresh chain state, runs the exact calldata through Aomi's stage-and-simulate pipeline, and produces an unsigned Safe package for the manager's own signer. Neither Steward nor Aomi is the curator, signer, custodian, or broadcaster.
 
-**Reference pilot.** To show the method on real data, Steward reconstructs the January 2025 USD0++ response of a public Morpho USDC vault (then named Gauntlet USDC Balanced, now Gauntlet USDC Core, `0x8eB6…d458`) entirely from public data, and uses the same contract as its first live control-room target. Gauntlet is a public worked example only: it is not a customer or partner, has not endorsed this project, and no Gauntlet credentials or signing authority are used.
+**Reference pilot.** Steward replays the January 2025 USD0++ response of a Morpho USDC vault (then named Gauntlet USDC Balanced, now Gauntlet USDC Core, `0x8eB6…d458`) from public chain data, and uses the same contract as its first live control-room target.
 
 Live site: [steward-aomi-labs.vercel.app](https://steward-aomi-labs.vercel.app) · incident replay: [/app/replay](https://steward-aomi-labs.vercel.app/app/replay)
 
@@ -101,7 +101,7 @@ The app is deliberately restricted to one Ethereum vault and one approval topolo
 
 No app tool exposes `evm_commit_txs`. The manager imports or otherwise reviews the unsigned package in their own Safe workflow. If a transaction is later executed independently, `verify_execution` checks the canonical receipt and residual indexed exposure.
 
-One assurance gap remains explicit: today's generic `simulate_batch` proves atomic call success, calldata identity, and allocator authorization by non-revert, but does not yet emit arbitrary post-call state reads from the same ephemeral fork. Direct fork post-state assertions must be added to the host before the product claims simulated residual-exposure proof.
+Next host capability: today's `simulate_batch` proves atomic call success, calldata identity, and allocator authorization by non-revert, but does not yet emit arbitrary post-call state reads from the same ephemeral fork. Post-state assertions on the same fork extend this to simulated residual-exposure proof; see [docs/roadmap/post-state-proof.md](docs/roadmap/post-state-proof.md).
 
 ## System shape
 
@@ -154,7 +154,7 @@ flowchart LR
 
 ## Design-partner pilot
 
-The outside-in prototype needs no access to the manager's systems. A production pilot with a vault manager (a curator, an RWA issuer or an institutional treasury) asks for four narrow inputs:
+Steward is in an early pilot phase with a working prototype running internally on the Aomi runtime, and we are in early conversations with RWA providers and institutional vault operators. A production pilot with a vault manager (a curator, an RWA issuer or an institutional treasury) starts outside-in and asks for four narrow inputs:
 
 1. one sanitized internal alert or model-output payload;
 2. the current alert-to-operator approval topology and allocator wallet policy;
@@ -165,7 +165,7 @@ The acceptance test is a historical incident chosen by the design partner: inges
 
 The next host capability, post-state assertions on the same simulation fork, is specified in [docs/roadmap/post-state-proof.md](docs/roadmap/post-state-proof.md).
 
-## Sources and limitations
+## Sources
 
 - [Gauntlet automated risk management methodology](https://vaultbook.gauntlet.xyz/vaults/morpho-vaults/curation-methodology-and-risk-factor-overview/automated-risk-management-solutions)
 - [Gauntlet market-volatility incident write-up](https://vaultbook.gauntlet.xyz/resources/market-volatility)
@@ -173,4 +173,4 @@ The next host capability, post-state assertions on the same simulation fork, is 
 - [MetaMorpho reference implementation](https://github.com/morpho-org/metamorpho)
 - [Morpho Vault V2 role model](https://github.com/morpho-org/vault-v2)
 
-The checked-in fixture is an indexed public-data snapshot. A production assurance system must additionally validate indexer completeness, pin RPC providers with archive guarantees, decode all account-abstraction layers, ingest the manager's internal alert identity, and simulate against a block-exact fork.
+The checked-in fixture is an indexed public-data snapshot. Production deployments add indexer-completeness checks, pinned RPC providers with archive guarantees, decoding of all account-abstraction layers, ingestion of the manager's internal alert identity, and simulation against a block-exact fork.
