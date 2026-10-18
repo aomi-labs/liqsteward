@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "version": "0.1.0",
+  "license": "Apache-2.0",
   "description": "Agentic intelligence and control for manager-governed onchain vault operations",
   "workspaces": [
     "apps/*",
