@@ -174,3 +174,7 @@ The next host capability, post-state assertions on the same simulation fork, is 
 - [Morpho Vault V2 role model](https://github.com/morpho-org/vault-v2)
 
 The checked-in fixture is an indexed public-data snapshot. Production deployments add indexer-completeness checks, pinned RPC providers with archive guarantees, decoding of all account-abstraction layers, ingestion of the manager's internal alert identity, and simulation against a block-exact fork.
+
+## License
+
+Apache License 2.0. See the `LICENSE` file at the repository root.
